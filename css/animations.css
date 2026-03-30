@@ -1,0 +1,211 @@
+/* =============================================
+   W2O SALADA - Animations & Dynamic Effects
+   ============================================= */
+
+/* === 스크롤 트리거 애니메이션 === */
+.anim-reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anim-reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 히어로 전용 fade-up */
+.anim-fade-up {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.anim-fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* stagger 딜레이 */
+.anim-stagger-1 { transition-delay: 0.1s; }
+.anim-stagger-2 { transition-delay: 0.2s; }
+.anim-stagger-3 { transition-delay: 0.3s; }
+.anim-stagger-4 { transition-delay: 0.4s; }
+
+.anim-delay-1 { transition-delay: 0.3s; }
+.anim-delay-2 { transition-delay: 0.6s; }
+.anim-delay-3 { transition-delay: 0.9s; }
+
+/* === 슬라이드 인 (좌/우) === */
+.anim-slide-left {
+    opacity: 0;
+    transform: translateX(-60px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.anim-slide-right {
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.anim-slide-left.visible,
+.anim-slide-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* === 스케일 인 === */
+.anim-scale {
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.anim-scale.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* === 패럴랙스 히어로 배경 === */
+.hero-bg {
+    will-change: transform;
+    transition: transform 0.1s linear;
+}
+
+/* === 메뉴 카드 필터 트랜지션 === */
+.menu-card {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-card.hidden {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+    position: absolute;
+}
+
+.menu-card.show {
+    opacity: 1;
+    transform: scale(1);
+    animation: cardIn 0.5s ease forwards;
+}
+
+@keyframes cardIn {
+    0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* === 호버 마이크로 애니메이션 === */
+
+/* 아이콘 pulse */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+.about-card:hover .about-icon {
+    animation: pulse 0.6s ease;
+}
+
+/* 버튼 아이콘 화살표 이동 */
+.btn .material-symbols-outlined {
+    transition: transform 0.3s ease;
+}
+
+.btn:hover .material-symbols-outlined {
+    transform: translateX(4px);
+}
+
+/* === 카운트업 숫자 효과 === */
+.stat-number {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+}
+
+/* === 타임라인 프로그레스 === */
+.timeline-progress-bar {
+    will-change: height;
+}
+
+/* === 타임라인 점 활성화 효과 === */
+.timeline-dot {
+    will-change: border-color, background, box-shadow;
+}
+
+.timeline-dot.reached {
+    border-color: var(--primary);
+    background: var(--primary);
+    box-shadow: 0 0 0 8px rgba(46, 204, 113, 0.15);
+}
+
+.timeline-dot.reached .material-symbols-outlined {
+    color: white;
+}
+
+/* === 리뷰 슬라이더 === */
+.review-track {
+    will-change: transform;
+}
+
+/* === 부드러운 스크롤 헤더 전환 === */
+.header {
+    will-change: padding, background;
+}
+
+/* === 필터 버튼 ripple === */
+.filter-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(46, 204, 113, 0.15);
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease, height 0.5s ease;
+}
+
+.filter-btn:active::after {
+    width: 200px;
+    height: 200px;
+}
+
+/* === 플랜 카드 호버 glow === */
+.plan-card-popular {
+    box-shadow: 0 4px 20px rgba(46, 204, 113, 0.15);
+}
+
+.plan-card-popular:hover {
+    box-shadow: 0 12px 40px rgba(46, 204, 113, 0.25);
+}
+
+/* === prefers-reduced-motion === */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .anim-reveal,
+    .anim-fade-up,
+    .anim-slide-left,
+    .anim-slide-right,
+    .anim-scale {
+        opacity: 1;
+        transform: none;
+    }
+
+    .hero-bg {
+        transform: none !important;
+    }
+}
