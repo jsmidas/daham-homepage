@@ -68,21 +68,12 @@
     <!-- 섹션 1: 히어로 -->
     <section id="hero" class="hero">
         <div class="hero-bg">
-            <!-- 영상이 준비되면 video 태그로 교체 -->
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="videos/hero.mp4" type="video/mp4">
+            </video>
             <div class="hero-bg-overlay"></div>
         </div>
-        <div class="hero-content">
-            <p class="hero-subtitle anim-fade-up">Wake 2 go Out !</p>
-            <h1 class="hero-title">
-                <span class="typing-text" id="typingText"></span>
-                <span class="typing-cursor">|</span>
-            </h1>
-            <p class="hero-desc anim-fade-up anim-delay-2">새벽의 신선함을 깨웁니다.</p>
-            <div class="hero-buttons anim-fade-up anim-delay-3">
-                <a href="#menu" class="btn btn-primary btn-lg">메뉴 보기</a>
-                <a href="#subscribe" class="btn btn-orange btn-lg">건강관리 Let's Start</a>
-            </div>
-        </div>
+        <!-- 히어로 콘텐츠는 about 섹션 헤더로 이동 -->
         <div class="scroll-indicator" id="scrollIndicator">
             <span class="scroll-text">Scroll</span>
             <div class="scroll-arrow">
@@ -94,9 +85,18 @@
     <!-- 섹션 2: 서비스 소개 -->
     <section id="about" class="section about">
         <div class="container">
-            <div class="section-header">
+            <div class="section-header hero-moved">
                 <span class="section-tag anim-reveal">WHY W2O SALADA</span>
-                <h2 class="section-title anim-reveal">건강한 하루,<br>우리가 시작합니다</h2>
+                <p class="hero-subtitle anim-fade-up">Wake 2 go Out !</p>
+                <h2 class="section-title anim-reveal">
+                    <span class="typing-text" id="typingText"></span>
+                    <span class="typing-cursor">|</span>
+                </h2>
+                <p class="hero-desc anim-fade-up anim-delay-2">새벽의 신선함을 깨웁니다.</p>
+                <div class="hero-buttons anim-fade-up anim-delay-3">
+                    <a href="#menu" class="btn btn-primary btn-lg">메뉴 보기</a>
+                    <a href="#subscribe" class="btn btn-orange btn-lg">건강관리 Let's Start</a>
+                </div>
             </div>
             <div class="about-grid">
                 <div class="about-card anim-reveal anim-stagger-1">
