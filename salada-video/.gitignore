@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Ignore the output video from Git but not videos you import into src/.
+out
+
+# 대용량 미디어 파일 제외
+public/*.mp4
+public/*.jpg
+public/*.png
+public/용기에담긴샐러드/
