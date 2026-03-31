@@ -135,7 +135,7 @@ export const W2OLogoAnimation: React.FC = () => {
             fontSize={78} fontWeight={800}
             fontFamily="'Arial Black', Arial, sans-serif"
             fill="#FFFFFF" letterSpacing={-2}>W</text>
-          <circle cx={cx - 57} cy={cy - 15} r={6} fill="#EF9F27" />
+          <circle cx={cx - 52} cy={cy - 15} r={6} fill="#EF9F27" />
         </g>
 
         {/* ── 2 ── */}
@@ -147,7 +147,7 @@ export const W2OLogoAnimation: React.FC = () => {
             fontSize={78} fontWeight={800}
             fontFamily="'Arial Black', Arial, sans-serif"
             fill="#EF9F27" letterSpacing={-2}>2</text>
-          <circle cx={cx + 10} cy={cy - 15} r={6} fill="#EF9F27" />
+          <circle cx={cx + 16} cy={cy - 15} r={6} fill="#EF9F27" />
         </g>
 
         {/* ── 화살표 라인 (O 이전) ── */}

@@ -91,8 +91,8 @@ export const W2OLogo: React.FC<W2OLogoProps> = ({
         letterSpacing={-2}
       >W</text>
 
-      {/* 구분 점 1 */}
-      <circle cx={143} cy={185} r={6} fill="#EF9F27" />
+      {/* 구분 점 1 (W와 2 정중앙) */}
+      <circle cx={148} cy={185} r={6} fill="#EF9F27" />
 
       {/* 2 : 앰버 */}
       <text
@@ -104,8 +104,8 @@ export const W2OLogo: React.FC<W2OLogoProps> = ({
         letterSpacing={-2}
       >2</text>
 
-      {/* 구분 점 2 */}
-      <circle cx={210} cy={185} r={6} fill="#EF9F27" />
+      {/* 구분 점 2 (2와 O 정중앙) */}
+      <circle cx={216} cy={185} r={6} fill="#EF9F27" />
 
       {/* 화살표 라인 (O 이전에 그려야 O가 내부를 가림) */}
       <line
