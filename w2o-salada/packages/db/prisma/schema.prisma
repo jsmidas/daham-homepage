@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ── 회원 ──
+model User {
+  id            String    @id @default(cuid())
+  username      String?   @unique
+  email         String    @unique
+  password      String?
+  name          String
+  phone         String?
+  role          Role      @default(CUSTOMER)
+  provider      String?   // kakao, naver, email
+  providerId    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses     Address[]
+  orders        Order[]
+  subscriptions Subscription[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  DRIVER
+}
+
+// ── 배송지 ──
+model Address {
+  id           String  @id @default(cuid())
+  userId       String
+  user         User    @relation(fields: [userId], references: [id])
+  name         String  // 수령인
+  phone        String
+  zipCode      String
+  address1     String  // 기본 주소
+  address2     String? // 상세 주소
+  isDefault    Boolean @default(false)
+  deliveryMemo String?
+
+  orders Order[]
+
+  @@map("addresses")
+}
+
+// ── 카테고리 ──
+model Category {
+  id       String    @id @default(cuid())
+  name     String    // 샐러드, 그레인볼, 프로틴 등
+  slug     String    @unique
+  sortOrder Int      @default(0)
+  products Product[]
+
+  @@map("categories")
+}
+
+// ── 상품 (메뉴) ──
+model Product {
+  id          String   @id @default(cuid())
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  name        String
+  description String?
+  price       Int      // 원 단위
+  kcal        Int?
+  imageUrl    String?
+  tags        String?  // "BEST", "NEW" 등
+  isActive    Boolean  @default(true)
+  stock       Int      @default(999)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems        OrderItem[]
+  subscriptionItems SubscriptionItem[]
+
+  @@map("products")
+}
+
+// ── 주문 ──
+model Order {
+  id              String      @id @default(cuid())
+  orderNo         String      @unique // W2O-20260401-0001
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  addressId       String?
+  address         Address?    @relation(fields: [addressId], references: [id])
+  subscriptionId  String?
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+  type            OrderType   @default(SINGLE)
+  status          OrderStatus @default(PENDING)
+  totalAmount     Int         // 총 결제 금액
+  deliveryFee     Int         @default(0)
+  discountAmount  Int         @default(0)
+  paymentKey      String?     // 토스 paymentKey
+  paidAt          DateTime?
+  deliveryDate    DateTime?   // 배송 예정일
+  deliveredAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items     OrderItem[]
+  payments  Payment[]
+  delivery  Delivery?
+
+  @@map("orders")
+}
+
+enum OrderType {
+  SINGLE
+  SUBSCRIPTION
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPING
+  DELIVERED
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+// ── 주문 상품 ──
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id])
+  productId  String
+  product    Product @relation(fields: [productId], references: [id])
+  quantity   Int
+  unitPrice  Int
+  totalPrice Int
+
+  @@map("order_items")
+}
+
+// ── 결제 ──
+model Payment {
+  id           String        @id @default(cuid())
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id])
+  paymentKey   String?       // 토스 paymentKey
+  method       String?       // CARD, KAKAOPAY, NAVERPAY
+  amount       Int
+  status       PaymentStatus @default(READY)
+  billingKey   String?       // 정기결제용 (암호화)
+  receiptUrl   String?
+  cancelReason String?
+  cancelledAt  DateTime?
+  rawResponse  String?       // 토스 원본 응답 (JSON 문자열)
+  createdAt    DateTime      @default(now())
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  READY
+  DONE
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+// ── 정기구독 ──
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  planType         PlanType
+  frequency        Frequency
+  status           SubscriptionStatus @default(PENDING)
+  billingKey       String?            // 토스 빌링키 (암호화)
+  nextBillingDate  DateTime?
+  nextDeliveryDate DateTime?
+  price            Int
+  startedAt        DateTime?
+  pausedAt         DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  items  SubscriptionItem[]
+  orders Order[]
+
+  @@map("subscriptions")
+}
+
+enum PlanType {
+  LIGHT
+  REGULAR
+  PREMIUM
+}
+
+enum Frequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+// ── 구독 메뉴 구성 ──
+model SubscriptionItem {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  quantity       Int          @default(1)
+  dayOfWeek      Int?         // 0=일, 1=월 ~ 6=토
+
+  @@map("subscription_items")
+}
+
+// ── 배송 ──
+model Delivery {
+  id            String         @id @default(cuid())
+  orderId       String         @unique
+  order         Order          @relation(fields: [orderId], references: [id])
+  driverId      String?
+  status        DeliveryStatus @default(PENDING)
+  scheduledDate DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  photoUrl      String?        // 배송 확인 사진
+  memo          String?
+  sortOrder     Int            @default(0) // 배송 코스 순서
+
+  @@map("deliveries")
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+// ── 알림 ──
+model Notification {
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id])
+  type         NotificationType
+  templateCode String?
+  content      String
+  sentAt       DateTime?
+  status       NotificationStatus @default(PENDING)
+  createdAt    DateTime           @default(now())
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  ALIMTALK
+  SMS
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}

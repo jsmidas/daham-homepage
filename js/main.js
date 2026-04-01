@@ -38,8 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // === 스무스 스크롤 ===
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', (e) => {
+            const href = anchor.getAttribute('href');
+            if (href === '#') return;
             e.preventDefault();
-            const target = document.querySelector(anchor.getAttribute('href'));
+            const target = document.querySelector(href);
             if (target) {
                 const headerHeight = header.offsetHeight;
                 const targetPosition = target.offsetTop - headerHeight;
@@ -91,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentSlide = 0;
         const cards = reviewTrack.querySelectorAll('.review-card');
         let cardsPerView = getCardsPerView();
-        const totalSlides = Math.max(0, cards.length - cardsPerView);
+        let totalSlides = Math.max(0, cards.length - cardsPerView);
 
         function getCardsPerView() {
             if (window.innerWidth <= 768) return 1;
@@ -133,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 리사이즈 대응
         window.addEventListener('resize', () => {
             cardsPerView = getCardsPerView();
+            totalSlides = Math.max(0, cards.length - cardsPerView);
             currentSlide = 0;
             updateSlider();
         });

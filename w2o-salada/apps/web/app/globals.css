@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  /* W2O SALADA 브랜드 컬러 */
+  --color-brand-green: #1D9E75;
+  --color-brand-mint: #5DCAA5;
+  --color-brand-amber: #EF9F27;
+  --color-brand-dark: #0A1A0F;
+  --color-brand-deep: #0F2318;
+  --color-brand-light: #F4F0E8;
+
+  /* 폰트 */
+  --font-sans: "Pretendard", system-ui, -apple-system, sans-serif;
+}
+
+body {
+  color: #222;
+  background: #fff;
+  font-family: var(--font-sans);
+}

@@ -159,6 +159,17 @@ img {
     letter-spacing: -1px;
 }
 
+.logo-kr {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 1px;
+}
+
+.header.scrolled .logo-kr {
+    color: var(--text-light);
+}
+
 .logo-salada {
     font-size: 0.75rem;
     font-weight: 300;
@@ -269,14 +280,14 @@ img {
 
 .btn-outline {
     background: transparent;
-    color: white;
-    border: 2px solid rgba(255,255,255,0.6);
+    color: var(--text);
+    border: 2px solid var(--border);
 }
 
 .btn-outline:hover {
-    background: white;
-    color: var(--text);
-    border-color: white;
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
     transform: translateY(-2px);
 }
 

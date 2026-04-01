@@ -145,13 +145,17 @@ const AnimationEngine = {
         const dots = document.querySelectorAll('.timeline-dot');
         if (!progressBar || !timeline) return;
 
+        const scrollHandler = () => {
+            this.updateTimeline(progressBar, timeline, dots);
+        };
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    this.updateTimeline(progressBar, timeline, dots);
-                    window.addEventListener('scroll', () => {
-                        this.updateTimeline(progressBar, timeline, dots);
-                    });
+                    scrollHandler();
+                    window.addEventListener('scroll', scrollHandler);
+                } else {
+                    window.removeEventListener('scroll', scrollHandler);
                 }
             });
         }, { threshold: 0.1 });

@@ -110,7 +110,7 @@ export const Overlay: React.FC = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) }
   );
 
-  // 슬로건 3: "Wake 2 go Out"
+  // 슬로건 3: "Wake up 2 go Out"
   const headline3Opacity = interpolate(
     frame,
     [fps * 14, fps * 15, fps * 18.5, fps * 19],
@@ -248,7 +248,7 @@ export const Overlay: React.FC = () => {
               textShadow: "0 2px 20px rgba(0,0,0,0.5)",
             }}
           >
-            Wake <span style={{ color: "#EF9F27" }}>2</span> go Out
+            <span style={{ color: "#5DCAA5" }}>W</span>ake up <span style={{ color: "#EF9F27" }}>2</span> go <span style={{ color: "#5DCAA5" }}>O</span>ut
           </div>
         </div>
       )}

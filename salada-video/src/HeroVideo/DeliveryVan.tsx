@@ -171,7 +171,7 @@ export const DeliveryVan: React.FC<DeliveryVanProps> = ({
 
       {/* ── 운전석 도어 다함 로고 ── */}
       <image
-        href={staticFile("로고11.png")}
+        href={staticFile("daham-logo.png")}
         x={330}
         y={120}
         width={110}
