@@ -18,3 +18,36 @@ body {
   background: #fff;
   font-family: var(--font-sans);
 }
+
+/* 아래에서 위로 천천히 올라감 */
+@keyframes floatUp {
+  0% { opacity: 0; transform: translateY(80px) rotate(0deg); }
+  10% { opacity: 0.5; }
+  50% { opacity: 0.4; transform: translateY(-200px) rotate(15deg); }
+  90% { opacity: 0.3; }
+  100% { opacity: 0; transform: translateY(-500px) rotate(-10deg); }
+}
+
+/* 왼쪽에서 오른쪽으로 쭉 날아감 */
+@keyframes driftRight {
+  0% { opacity: 0; transform: translate(-80px, 0) rotate(0deg); }
+  5% { opacity: 0.5; }
+  50% { opacity: 0.4; transform: translate(calc(100vw / 2), -40px) rotate(12deg); }
+  95% { opacity: 0.3; }
+  100% { opacity: 0; transform: translate(100vw, -80px) rotate(-8deg); }
+}
+
+/* 느린 좌우 흔들림 (보조) */
+@keyframes sway {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(30px); }
+  75% { transform: translateX(-30px); }
+}
+
+@keyframes iconPulse {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.2) rotate(-5deg); }
+  50% { transform: scale(0.95) rotate(3deg); }
+  75% { transform: scale(1.1) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}

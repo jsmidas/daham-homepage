@@ -152,15 +152,6 @@ function FeatureCard({ icon, title, desc, stat, statLabel, delay }: {
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes iconPulse {
-          0% { transform: scale(1) rotate(0deg); }
-          25% { transform: scale(1.2) rotate(-5deg); }
-          50% { transform: scale(0.95) rotate(3deg); }
-          75% { transform: scale(1.1) rotate(-2deg); }
-          100% { transform: scale(1) rotate(0deg); }
-        }
-      `}</style>
     </div>
   );
 }
