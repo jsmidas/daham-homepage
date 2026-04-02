@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  // 관리자 계정
+  // ── 관리자 계정 ──
   const adminPassword = await bcrypt.hash("admin123", 12);
   await prisma.user.upsert({
     where: { email: "admin@w2osalada.co.kr" },
@@ -17,50 +17,66 @@ async function main() {
       provider: "email",
     },
   });
+  console.log("✅ 관리자 계정: admin@w2osalada.co.kr / admin123");
 
-  console.log("✅ 관리자 계정 생성: admin@w2osalada.co.kr / admin123");
-
-  // 카테고리
+  // ── 카테고리 (3개) ──
   const categories = [
     { name: "샐러드", slug: "salad", sortOrder: 1 },
-    { name: "그레인볼", slug: "bowl", sortOrder: 2 },
-    { name: "프로틴", slug: "protein", sortOrder: 3 },
-    { name: "주스/음료", slug: "juice", sortOrder: 4 },
+    { name: "간편식", slug: "simple", sortOrder: 2 },
+    { name: "기타", slug: "etc", sortOrder: 3 },
   ];
 
+  // 기존 상품 먼저 삭제 (FK 제약)
+  await prisma.product.deleteMany({});
+
+  // 카테고리 upsert
   for (const cat of categories) {
     await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: {},
+      update: { name: cat.name, sortOrder: cat.sortOrder },
       create: cat,
     });
   }
+  // 사용하지 않는 이전 카테고리 삭제
+  await prisma.category.deleteMany({
+    where: { slug: { notIn: categories.map((c) => c.slug) } },
+  });
+  console.log("✅ 카테고리: 샐러드 / 간편식 / 기타");
 
-  console.log("✅ 카테고리 생성 완료");
-
-  // 샘플 상품
   const saladCat = await prisma.category.findUnique({ where: { slug: "salad" } });
-  const bowlCat = await prisma.category.findUnique({ where: { slug: "bowl" } });
-  const proteinCat = await prisma.category.findUnique({ where: { slug: "protein" } });
-  const juiceCat = await prisma.category.findUnique({ where: { slug: "juice" } });
 
-  const products = [
-    { categoryId: saladCat!.id, name: "그린 가든 샐러드", description: "유기농 믹스 그린, 아보카도, 견과류, 발사믹 드레싱", price: 8900, kcal: 320, tags: "BEST", sortOrder: 1 },
-    { categoryId: saladCat!.id, name: "연어 포케 샐러드", description: "노르웨이산 연어, 퀴노아, 에다마메, 참깨 드레싱", price: 11900, kcal: 410, tags: "NEW", sortOrder: 2 },
-    { categoryId: saladCat!.id, name: "시저 샐러드", description: "로메인, 파마산 치즈, 크루통, 시저 드레싱", price: 8500, kcal: 380, tags: "", sortOrder: 3 },
-    { categoryId: bowlCat!.id, name: "퀴노아 그레인볼", description: "유기농 퀴노아, 구운 채소, 병아리콩, 타히니 소스", price: 9900, kcal: 450, tags: "", sortOrder: 1 },
-    { categoryId: proteinCat!.id, name: "치킨 프로틴 박스", description: "그릴드 치킨, 고구마, 브로콜리, 현미밥", price: 10900, kcal: 520, tags: "", sortOrder: 1 },
-    { categoryId: juiceCat!.id, name: "베리 디톡스 스무디", description: "블루베리, 아사이, 바나나, 아몬드밀크", price: 6500, kcal: 180, tags: "", sortOrder: 1 },
+  // ── 샐러드 상품 (실제 메뉴, 정가 7500원 / 판매가 5900원) ──
+  const salads = [
+    { name: "꽃맛살 샐러드", description: "신선한 꽃맛살과 다양한 채소의 조화", sortOrder: 1 },
+    { name: "메밀면 샐러드", description: "쫄깃한 메밀면과 신선한 채소의 만남", sortOrder: 2 },
+    { name: "새우 샐러드", description: "탱글탱글한 새우와 상큼한 채소", sortOrder: 3 },
+    { name: "고구마 샐러드", description: "달콤한 고구마와 건강한 채소의 조합", sortOrder: 4 },
+    { name: "치킨텐더 샐러드", description: "바삭한 치킨텐더와 풍성한 채소", sortOrder: 5 },
+    { name: "참깨 두부 샐러드", description: "고소한 참깨 두부와 신선한 채소", sortOrder: 6 },
+    { name: "훈제오리 샐러드", description: "풍미 가득한 훈제오리와 채소", sortOrder: 7 },
+    { name: "리코타치즈 샐러드", description: "부드러운 리코타치즈와 신선한 채소", sortOrder: 8 },
+    { name: "단호박 샐러드", description: "달콤한 단호박과 영양 가득한 채소", sortOrder: 9 },
+    { name: "베이컨버섯 샐러드", description: "짭짤한 베이컨과 향긋한 버섯의 조화", sortOrder: 10 },
+    { name: "파스타 샐러드", description: "쫄깃한 파스타와 신선한 채소", sortOrder: 11 },
+    { name: "데리야끼 불고기 샐러드", description: "달콤짭짤한 데리야끼 불고기와 채소", sortOrder: 12 },
   ];
 
-  for (const prod of products) {
-    const existing = await prisma.product.findFirst({ where: { name: prod.name } });
-    if (!existing) {
-      await prisma.product.create({ data: prod });
-    }
+  for (const salad of salads) {
+    await prisma.product.create({
+      data: {
+        categoryId: saladCat!.id,
+        name: salad.name,
+        description: salad.description,
+        originalPrice: 7500,
+        price: 5900,
+        tags: salad.sortOrder <= 4 ? "BEST" : salad.sortOrder >= 11 ? "NEW" : null,
+        isActive: true,
+        sortOrder: salad.sortOrder,
+      },
+    });
   }
 
-  console.log("✅ 샘플 상품 생성 완료");
+  console.log("✅ 샐러드 12종 등록 (정가 7,500원 / 판매가 5,900원)");
 }
 
 main()

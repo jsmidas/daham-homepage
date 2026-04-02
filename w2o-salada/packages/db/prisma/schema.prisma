@@ -72,12 +72,15 @@ model Product {
   category    Category @relation(fields: [categoryId], references: [id])
   name        String
   description String?
-  price       Int      // 원 단위
+  originalPrice Int?     // 정가 (원)
+  price       Int      // 판매가 (원, 부가세 포함)
   kcal        Int?
   imageUrl    String?
-  tags        String?  // "BEST", "NEW" 등
+  tags        String?  // "BEST", "NEW", "SALE" 등
   isActive    Boolean  @default(true)
   stock       Int      @default(999)
+  dailyLimit  Int?     // 일일 제한 수량 (null=무제한)
+  availableDays String? // 배송 가능 요일 "월,수,금" 또는 null=매일
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -279,4 +282,14 @@ enum NotificationStatus {
   PENDING
   SENT
   FAILED
+}
+
+// ── 쇼핑몰 설정 (key-value) ──
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
 }

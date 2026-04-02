@@ -8,19 +8,21 @@ type Product = {
   name: string;
   categoryId: string;
   category?: { name: string; slug: string };
+  originalPrice: number | null;
   price: number;
   kcal: number | null;
   isActive: boolean;
   tags: string | null;
   imageUrl: string | null;
   sortOrder: number;
+  dailyLimit: number | null;
+  availableDays: string | null;
 };
 
 const categoryLabels: Record<string, string> = {
   salad: "샐러드",
-  bowl: "그레인볼",
-  protein: "프로틴",
-  juice: "주스/음료",
+  simple: "간편식",
+  etc: "기타",
 };
 
 export default function ProductsPage() {
@@ -109,8 +111,8 @@ export default function ProductsPage() {
             <tr>
               <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">상품명</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">카테고리</th>
-              <th className="text-right px-5 py-3 text-sm font-medium text-gray-500">가격</th>
-              <th className="text-right px-5 py-3 text-sm font-medium text-gray-500">칼로리</th>
+              <th className="text-right px-5 py-3 text-sm font-medium text-gray-500">정가/판매가</th>
+              <th className="text-center px-5 py-3 text-sm font-medium text-gray-500">배송요일</th>
               <th className="text-center px-5 py-3 text-sm font-medium text-gray-500">상태</th>
               <th className="text-center px-5 py-3 text-sm font-medium text-gray-500">관리</th>
             </tr>
@@ -147,11 +149,19 @@ export default function ProductsPage() {
                   <td className="px-5 py-4 text-sm text-gray-600">
                     {p.category?.name ?? "-"}
                   </td>
-                  <td className="px-5 py-4 text-sm text-gray-800 text-right font-medium">
-                    {p.price.toLocaleString()}원
+                  <td className="px-5 py-4 text-right">
+                    {p.originalPrice && p.originalPrice > p.price ? (
+                      <>
+                        <span className="text-xs text-gray-400 line-through">{p.originalPrice.toLocaleString()}원</span>
+                        <br />
+                        <span className="text-sm text-red-500 font-bold">{p.price.toLocaleString()}원</span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-gray-800 font-medium">{p.price.toLocaleString()}원</span>
+                    )}
                   </td>
-                  <td className="px-5 py-4 text-sm text-gray-500 text-right">
-                    {p.kcal ? `${p.kcal} kcal` : "-"}
+                  <td className="px-5 py-4 text-center text-xs text-gray-500">
+                    {p.availableDays ? p.availableDays : "매일"}
                   </td>
                   <td className="px-5 py-4 text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${

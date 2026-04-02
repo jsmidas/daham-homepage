@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const initialSettings = {
+const defaultSettings = {
   shopName: "W2O SALADA",
   phone: "053-721-7794",
   email: "hello@w2osalada.co.kr",
@@ -11,34 +11,66 @@ const initialSettings = {
   cutoffTime: "23:00",
   deliveryStart: "03:00",
   deliveryEnd: "06:00",
-  freeShippingMin: 15000,
-  deliveryFee: 3000,
+  freeShippingMin: "15000",
+  deliveryFee: "3000",
   deliveryAreas: "대구, 경북 일부",
-  orderConfirm: true,
-  deliveryStart_noti: true,
-  deliveryDone: true,
-  subscriptionPayment: true,
-  paymentFail: true,
-  subscriptionRenew: true,
+  orderConfirm: "true",
+  deliveryStart_noti: "true",
+  deliveryDone: "true",
+  subscriptionPayment: "true",
+  paymentFail: "true",
+  subscriptionRenew: "true",
   tossClientKey: "",
   tossSecretKey: "",
 };
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState(defaultSettings);
   const [saved, setSaved] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const update = (key: string, value: string | number | boolean) => {
+  // DB에서 설정 불러오기
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        setSettings((prev) => ({ ...prev, ...data }));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const update = (key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = (section: string) => {
-    // TODO: API 호출로 저장
-    setSaved(section);
-    setTimeout(() => setSaved(null), 2000);
+  const handleSave = async (section: string, keys: string[]) => {
+    const data: Record<string, string> = {};
+    for (const key of keys) {
+      data[key] = settings[key as keyof typeof settings];
+    }
+
+    const res = await fetch("/api/admin/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (res.ok) {
+      setSaved(section);
+      setTimeout(() => setSaved(null), 2000);
+    }
   };
 
   const inputClass = "px-4 py-2.5 border border-gray-200 rounded-lg text-sm w-full max-w-md focus:outline-none focus:ring-2 focus:ring-[#1D9E75]/30 focus:border-[#1D9E75] transition";
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-gray-400">설정을 불러오는 중...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -71,10 +103,13 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="mt-5 flex items-center gap-3">
-            <button onClick={() => handleSave("basic")} className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition">
+            <button
+              onClick={() => handleSave("basic", ["shopName", "phone", "email", "address", "businessNumber"])}
+              className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition"
+            >
               저장
             </button>
-            {saved === "basic" && <span className="text-sm text-[#1D9E75]">저장되었습니다</span>}
+            {saved === "basic" && <span className="text-sm text-[#1D9E75] font-medium">저장되었습니다 ✓</span>}
           </div>
         </div>
 
@@ -98,11 +133,11 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600 block mb-1">배송비 (원)</label>
-              <input type="number" value={settings.deliveryFee} onChange={(e) => update("deliveryFee", Number(e.target.value))} className={inputClass} />
+              <input type="number" value={settings.deliveryFee} onChange={(e) => update("deliveryFee", e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600 block mb-1">무료배송 최소금액 (원)</label>
-              <input type="number" value={settings.freeShippingMin} onChange={(e) => update("freeShippingMin", Number(e.target.value))} className={inputClass} />
+              <input type="number" value={settings.freeShippingMin} onChange={(e) => update("freeShippingMin", e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600 block mb-1">배송 가능 지역</label>
@@ -110,10 +145,13 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="mt-5 flex items-center gap-3">
-            <button onClick={() => handleSave("delivery")} className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition">
+            <button
+              onClick={() => handleSave("delivery", ["cutoffTime", "deliveryStart", "deliveryEnd", "deliveryFee", "freeShippingMin", "deliveryAreas"])}
+              className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition"
+            >
               저장
             </button>
-            {saved === "delivery" && <span className="text-sm text-[#1D9E75]">저장되었습니다</span>}
+            {saved === "delivery" && <span className="text-sm text-[#1D9E75] font-medium">저장되었습니다 ✓</span>}
           </div>
         </div>
 
@@ -134,8 +172,8 @@ export default function SettingsPage() {
                 <div className="relative">
                   <input
                     type="checkbox"
-                    checked={settings[item.key as keyof typeof settings] as boolean}
-                    onChange={(e) => update(item.key, e.target.checked)}
+                    checked={settings[item.key as keyof typeof settings] === "true"}
+                    onChange={(e) => update(item.key, e.target.checked ? "true" : "false")}
                     className="sr-only peer"
                   />
                   <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-[#1D9E75] transition" />
@@ -145,10 +183,13 @@ export default function SettingsPage() {
             ))}
           </div>
           <div className="mt-5 flex items-center gap-3">
-            <button onClick={() => handleSave("notification")} className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition">
+            <button
+              onClick={() => handleSave("notification", ["orderConfirm", "deliveryStart_noti", "deliveryDone", "subscriptionPayment", "paymentFail", "subscriptionRenew"])}
+              className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition"
+            >
               저장
             </button>
-            {saved === "notification" && <span className="text-sm text-[#1D9E75]">저장되었습니다</span>}
+            {saved === "notification" && <span className="text-sm text-[#1D9E75] font-medium">저장되었습니다 ✓</span>}
           </div>
         </div>
 
@@ -166,10 +207,13 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="mt-5 flex items-center gap-3">
-            <button onClick={() => handleSave("payment")} className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition">
+            <button
+              onClick={() => handleSave("payment", ["tossClientKey", "tossSecretKey"])}
+              className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition"
+            >
               저장
             </button>
-            {saved === "payment" && <span className="text-sm text-[#1D9E75]">저장되었습니다</span>}
+            {saved === "payment" && <span className="text-sm text-[#1D9E75] font-medium">저장되었습니다 ✓</span>}
           </div>
         </div>
 
