@@ -74,7 +74,7 @@ export default function SubscribeSection() {
                 ))}
               </ul>
               <Link
-                href="/subscribe"
+                href="/#subscribe"
                 className={`block text-center py-3 rounded-full font-semibold transition ${
                   plan.popular
                     ? "bg-[#1D9E75] text-white hover:bg-[#167A5B]"

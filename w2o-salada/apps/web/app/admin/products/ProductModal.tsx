@@ -194,10 +194,38 @@ export default function ProductModal({
             <input type="text" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="BEST, NEW, SALE 등" className={inputClass} />
           </div>
 
-          {/* 이미지 URL */}
+          {/* 이미지 */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-1 block">이미지 URL</label>
-            <input type="text" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." className={inputClass} />
+            <label className="text-sm font-medium text-gray-700 mb-2 block">상품 이미지</label>
+            {form.imageUrl && (
+              <div className="mb-2 relative inline-block">
+                <img src={form.imageUrl} alt="미리보기" className="w-32 h-32 object-cover rounded-lg border" />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, imageUrl: "" })}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const fd = new FormData();
+                fd.append("file", file);
+                fd.append("folder", "products");
+                const res = await fetch("/api/upload", { method: "POST", body: fd });
+                const data = await res.json();
+                if (data.url) setForm({ ...form, imageUrl: data.url });
+              }}
+              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#1D9E75]/10 file:text-[#1D9E75] hover:file:bg-[#1D9E75]/20"
+            />
+            <p className="text-xs text-gray-400 mt-1">또는 URL 직접 입력:</p>
+            <input type="text" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." className={`${inputClass} mt-1`} />
           </div>
 
           {/* 설명 */}

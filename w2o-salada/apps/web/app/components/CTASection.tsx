@@ -11,7 +11,7 @@ export default function CTASection() {
           지금 가입하면 첫 주 30% 할인!
         </p>
         <Link
-          href="/subscribe"
+          href="/#subscribe"
           className="inline-block mt-8 px-10 py-4 bg-brand-amber text-white rounded-full font-bold text-lg hover:opacity-90 transition"
         >
           무료로 시작하기

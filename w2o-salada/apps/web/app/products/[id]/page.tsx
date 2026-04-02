@@ -9,10 +9,12 @@ type Product = {
   id: string;
   name: string;
   description: string | null;
+  originalPrice: number | null;
   price: number;
   kcal: number | null;
   tags: string | null;
   imageUrl: string | null;
+  availableDays: string | null;
   category: { name: string; slug: string };
 };
 
@@ -130,10 +132,22 @@ export default function ProductDetailPage() {
               <div className="flex items-end justify-between">
                 <div>
                   <p className="text-gray-500 text-sm">가격</p>
-                  <p className="text-3xl font-black text-white mt-1">
-                    {product.price.toLocaleString()}
-                    <span className="text-lg font-normal text-gray-400 ml-1">원</span>
-                  </p>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <p className="text-gray-500 text-sm line-through mt-1">
+                      {product.originalPrice.toLocaleString()}원
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-3xl font-black text-white">
+                      {product.price.toLocaleString()}
+                      <span className="text-lg font-normal text-gray-400 ml-1">원</span>
+                    </p>
+                    {product.originalPrice && product.originalPrice > product.price && (
+                      <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-sm font-bold rounded">
+                        {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {/* 수량 */}
                 <div className="flex items-center gap-3">
@@ -194,6 +208,12 @@ export default function ProductDetailPage() {
                 <span className="material-symbols-outlined text-brand-green">autorenew</span>
                 <span className="text-gray-400">정기구독 시 <span className="text-brand-amber">최대 15% 할인</span></span>
               </div>
+              {product.availableDays && (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="material-symbols-outlined text-brand-green">calendar_month</span>
+                  <span className="text-gray-400">배송 가능: <span className="text-white">{product.availableDays}</span></span>
+                </div>
+              )}
             </div>
           </div>
         </div>

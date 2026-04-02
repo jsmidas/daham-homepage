@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 type Product = {
   id: string;
   name: string;
   description: string | null;
+  originalPrice: number | null;
   price: number;
   kcal: number | null;
   tags: string | null;
   imageUrl: string | null;
+  availableDays: string | null;
   category: { name: string; slug: string };
 };
 
@@ -170,8 +172,20 @@ export default function MenuSection() {
                   <span className="text-[#7aaa90] text-sm">
                     {item.kcal ? `${item.kcal} kcal` : ""}
                   </span>
-                  <span className="text-[#1D9E75] font-bold text-lg">
-                    {item.price.toLocaleString()}원
+                  <span className="flex items-center gap-2">
+                    {item.originalPrice && item.originalPrice > item.price && (
+                      <span className="text-gray-500 text-sm line-through">
+                        {item.originalPrice.toLocaleString()}원
+                      </span>
+                    )}
+                    <span className="text-[#1D9E75] font-bold text-lg">
+                      {item.price.toLocaleString()}원
+                    </span>
+                    {item.originalPrice && item.originalPrice > item.price && (
+                      <span className="text-red-400 text-xs font-bold">
+                        {Math.round((1 - item.price / item.originalPrice) * 100)}%
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>
