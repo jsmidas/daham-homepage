@@ -170,38 +170,39 @@ export default function PageEditorPage() {
     } catch {
       // ignore
     }
-    if (!prods || prods.length === 0) prods = MOCK_PRODUCTS;
-
-    const found = prods.find((p) => p.id === id);
+    const found = prods.find((p: Product) => p.id === id);
     if (!found) {
       router.push("/admin/pages");
       return;
     }
     setProduct(found);
 
-    // Load from localStorage
-    const stored = localStorage.getItem(`w2o_page_${id}`);
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        setForm({
-          hero_images: data.hero_images || [],
-          subtitle: data.subtitle || "",
-          feature_title: data.feature_title || "",
-          feature_description: data.feature_description || "",
-          feature_images: data.feature_images || [],
-          key_points: data.key_points?.length > 0 ? data.key_points : [{ ...emptyKeyPoint }],
-          specs: data.specs?.length > 0 ? data.specs : [{ ...emptySpec }],
-          detail_description: data.detail_description || "",
-          detail_images: data.detail_images || [],
-          nutrition: data.nutrition?.length > 0 ? data.nutrition : DEFAULT_NUTRITION.map((n) => ({ ...n })),
-          gallery_images: data.gallery_images || [],
-          is_published: data.is_published || false,
-          section_order: data.section_order?.length > 0 ? data.section_order : [...DEFAULT_SECTION_ORDER],
-        });
-      } catch {
-        // ignore
+    // Load from DB API
+    try {
+      const pageRes = await fetch(`/api/admin/pages/${id}`);
+      if (pageRes.ok) {
+        const data = await pageRes.json();
+        if (data) {
+          const parse = (v: string | null) => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
+          setForm({
+            hero_images: parse(data.heroImages) || [],
+            subtitle: data.subtitle || "",
+            feature_title: data.featureTitle || "",
+            feature_description: data.featureDescription || "",
+            feature_images: parse(data.featureImages) || [],
+            key_points: parse(data.keyPoints) || [{ ...emptyKeyPoint }],
+            specs: parse(data.specs) || [{ ...emptySpec }],
+            detail_description: data.detailDescription || "",
+            detail_images: parse(data.detailImages) || [],
+            nutrition: parse(data.nutrition) || DEFAULT_NUTRITION.map((n) => ({ ...n })),
+            gallery_images: parse(data.galleryImages) || [],
+            is_published: data.isPublished || false,
+            section_order: parse(data.sectionOrder) || [...DEFAULT_SECTION_ORDER],
+          });
+        }
       }
+    } catch {
+      // ignore
     }
     setLoading(false);
   }, [id, router]);
@@ -210,25 +211,39 @@ export default function PageEditorPage() {
     fetchProduct();
   }, [fetchProduct]);
 
-  /* ── Save ── */
-  function handleSave() {
+  /* ── Save to DB ── */
+  async function handleSave() {
     setSaving(true);
-    const payload = {
-      ...form,
-      hero_images: form.hero_images.filter(Boolean),
-      feature_images: form.feature_images.filter(Boolean),
-      key_points: form.key_points.filter((kp) => kp.title),
-      specs: form.specs.filter((s) => s.label),
-      detail_images: form.detail_images.filter(Boolean),
-      nutrition: form.nutrition.filter((n) => n.label),
-      gallery_images: form.gallery_images.filter(Boolean),
-      _updatedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(`w2o_page_${id}`, JSON.stringify(payload));
-    setTimeout(() => {
-      setSaving(false);
-      setToast("저장되었습니다!");
-    }, 300);
+    try {
+      const payload = {
+        heroImages: JSON.stringify(form.hero_images.filter(Boolean)),
+        subtitle: form.subtitle,
+        featureTitle: form.feature_title,
+        featureDescription: form.feature_description,
+        featureImages: JSON.stringify(form.feature_images.filter(Boolean)),
+        keyPoints: JSON.stringify(form.key_points.filter((kp) => kp.title)),
+        specs: JSON.stringify(form.specs.filter((s) => s.label)),
+        detailDescription: form.detail_description,
+        detailImages: JSON.stringify(form.detail_images.filter(Boolean)),
+        nutrition: JSON.stringify(form.nutrition.filter((n) => n.label)),
+        galleryImages: JSON.stringify(form.gallery_images.filter(Boolean)),
+        sectionOrder: JSON.stringify(form.section_order),
+        isPublished: form.is_published,
+      };
+      const res = await fetch(`/api/admin/pages/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setToast("저장되었습니다!");
+      } else {
+        setToast("저장에 실패했습니다.");
+      }
+    } catch {
+      setToast("저장에 실패했습니다.");
+    }
+    setSaving(false);
   }
 
   /* ── Section toggle ── */
