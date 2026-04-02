@@ -22,16 +22,6 @@ const config: NextAuthConfig = {
         const usernameStr = credentials.username as string;
         const passwordStr = credentials.password as string;
 
-        // 개발용 관리자 데모 계정
-        if (usernameStr === "admin" && passwordStr === "admin1234") {
-          return {
-            id: "admin-001",
-            email: "admin@w2o.kr",
-            name: "관리자",
-            role: "ADMIN",
-          };
-        }
-
         try {
           // DB에서 아이디 또는 이메일로 검색
           const user = await prisma.user.findFirst({

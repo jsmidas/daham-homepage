@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@repo/db";
+import { requireAdmin } from "../../../../../lib/auth-guard";
 
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = await params;
 
-    let order;
-    try {
-      order = await prisma.order.findUnique({
-        where: { id },
-        include: { payment: true },
-      });
-    } catch (dbError) {
-      console.error("DB 연결 실패 (POST /api/orders/[id]/refund):", dbError);
-      return NextResponse.json({ error: "DB 미연결" }, { status: 503 });
-    }
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { payments: true },
+    });
 
     if (!order) {
       return NextResponse.json(
@@ -33,37 +31,30 @@ export async function POST(
       );
     }
 
-    let result;
-    try {
-      result = await prisma.$transaction(async (tx: any) => {
-        const updatedOrder = await tx.order.update({
-          where: { id },
-          data: { status: "REFUNDED" },
-        });
+    const payment = order.payments[0];
 
-        if (order.payment) {
-          await tx.payment.update({
-            where: { id: order.payment.id },
-            data: { status: "CANCELLED" },
-          });
-        }
-
-        return updatedOrder;
+    const result = await prisma.$transaction(async (tx: any) => {
+      const updatedOrder = await tx.order.update({
+        where: { id },
+        data: { status: "REFUNDED" },
       });
-    } catch (dbError) {
-      console.error("DB 연결 실패 (POST /api/orders/[id]/refund transaction):", dbError);
-      return NextResponse.json({ error: "DB 미연결" }, { status: 503 });
-    }
+
+      if (payment) {
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: { status: "CANCELLED" },
+        });
+      }
+
+      return updatedOrder;
+    });
 
     return NextResponse.json({
       message: "환불이 완료되었습니다.",
       order: result,
     });
-  } catch (error) {
-    console.error("POST /api/orders/[id]/refund error:", error);
-    return NextResponse.json(
-      { error: "환불 처리 중 오류가 발생했습니다." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("POST /api/admin/orders/[id]/refund error:", err);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }

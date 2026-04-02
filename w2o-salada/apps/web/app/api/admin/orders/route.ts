@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@repo/db";
+import { requireAdmin } from "../../../lib/auth-guard";
 
 export async function GET(request: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { searchParams } = request.nextUrl;
     const status = searchParams.get("status");
@@ -35,27 +39,21 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    let orders, total;
-    try {
-      [orders, total] = await Promise.all([
-        prisma.order.findMany({
-          where,
-          include: {
-            user: true,
-            items: { include: { product: true } },
-            payment: true,
-            delivery: true,
-          },
-          orderBy: { createdAt: "desc" },
-          skip,
-          take: limit,
-        }),
-        prisma.order.count({ where }),
-      ]);
-    } catch (dbError) {
-      console.error("DB 연결 실패 (GET /api/orders):", dbError);
-      return NextResponse.json([]);
-    }
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          user: true,
+          items: { include: { product: true } },
+          payments: true,
+          delivery: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
 
     return NextResponse.json({
       orders,
@@ -66,11 +64,8 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
-    console.error("GET /api/orders error:", error);
-    return NextResponse.json(
-      { error: "주문 목록을 불러올 수 없습니다." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("GET /api/admin/orders error:", err);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }

@@ -1,26 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@repo/db";
+import { requireAdmin } from "../../../../lib/auth-guard";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = await params;
 
-    let subscription;
-    try {
-      subscription = await prisma.subscription.findUnique({
-        where: { id },
-        include: {
-          user: true,
-          items: { include: { product: true } },
-        },
-      });
-    } catch (dbError) {
-      console.error("DB 연결 실패 (GET /api/subscriptions/[id]):", dbError);
-      return NextResponse.json({ error: "DB 미연결" }, { status: 503 });
-    }
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        items: { include: { product: true } },
+      },
+    });
 
     if (!subscription) {
       return NextResponse.json(
@@ -30,12 +28,9 @@ export async function GET(
     }
 
     return NextResponse.json(subscription);
-  } catch (error) {
-    console.error("GET /api/subscriptions/[id] error:", error);
-    return NextResponse.json(
-      { error: "구독 정보를 불러올 수 없습니다." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("GET /api/admin/subscriptions/[id] error:", err);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }
 
@@ -43,20 +38,17 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = await params;
     const body = await request.json();
     const { action, plan } = body;
 
-    let subscription;
-    try {
-      subscription = await prisma.subscription.findUnique({
-        where: { id },
-      });
-    } catch (dbError) {
-      console.error("DB 연결 실패 (PATCH /api/subscriptions/[id]):", dbError);
-      return NextResponse.json({ error: "DB 미연결" }, { status: 503 });
-    }
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+    });
 
     if (!subscription) {
       return NextResponse.json(
@@ -106,7 +98,7 @@ export async function PATCH(
             { status: 400 }
           );
         }
-        data.plan = plan;
+        data.planType = plan;
         break;
 
       default:
@@ -116,27 +108,18 @@ export async function PATCH(
         );
     }
 
-    let updated;
-    try {
-      updated = await prisma.subscription.update({
-        where: { id },
-        data,
-        include: {
-          user: true,
-          items: { include: { product: true } },
-        },
-      });
-    } catch (dbError) {
-      console.error("DB 연결 실패 (PATCH /api/subscriptions/[id] update):", dbError);
-      return NextResponse.json({ error: "DB 미연결" }, { status: 503 });
-    }
+    const updated = await prisma.subscription.update({
+      where: { id },
+      data,
+      include: {
+        user: true,
+        items: { include: { product: true } },
+      },
+    });
 
     return NextResponse.json(updated);
-  } catch (error) {
-    console.error("PATCH /api/subscriptions/[id] error:", error);
-    return NextResponse.json(
-      { error: "구독 정보를 변경할 수 없습니다." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("PATCH /api/admin/subscriptions/[id] error:", err);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }

@@ -16,14 +16,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // 저장된 아이디/비밀번호 불러오기
+  // 저장된 아이디 불러오기
   useEffect(() => {
     try {
       const saved = localStorage.getItem(SAVED_KEY);
       if (saved) {
-        const { username: u, password: p } = JSON.parse(saved);
+        const { username: u } = JSON.parse(saved);
         setUsername(u);
-        setPassword(p);
         setSaveLogin(true);
       }
     } catch {}
@@ -45,9 +44,9 @@ export default function LoginPage() {
     if (result?.error) {
       setError("아이디 또는 비밀번호가 올바르지 않습니다.");
     } else {
-      // 아이디/비밀번호 저장 처리
+      // 아이디 저장 처리 (비밀번호는 저장하지 않음)
       if (saveLogin) {
-        localStorage.setItem(SAVED_KEY, JSON.stringify({ username, password }));
+        localStorage.setItem(SAVED_KEY, JSON.stringify({ username }));
       } else {
         localStorage.removeItem(SAVED_KEY);
       }
@@ -138,7 +137,7 @@ export default function LoginPage() {
                 }}
                 className="w-4 h-4 rounded border-white/20 bg-white/5 text-[#1D9E75] focus:ring-[#1D9E75]/25 focus:ring-offset-0 cursor-pointer"
               />
-              <span className="text-sm text-white/40">아이디/비밀번호 저장</span>
+              <span className="text-sm text-white/40">아이디 저장</span>
             </label>
 
             {error && (

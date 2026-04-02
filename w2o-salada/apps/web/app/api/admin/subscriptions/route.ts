@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@repo/db";
+import { requireAdmin } from "../../../lib/auth-guard";
 
 export async function GET(request: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { searchParams } = request.nextUrl;
     const status = searchParams.get("status");
@@ -17,7 +21,7 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
     if (plan) {
-      where.plan = plan;
+      where.planType = plan;
     }
     if (search) {
       where.OR = [
@@ -26,25 +30,19 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    let subscriptions, total;
-    try {
-      [subscriptions, total] = await Promise.all([
-        prisma.subscription.findMany({
-          where,
-          include: {
-            user: true,
-            items: { include: { product: true } },
-          },
-          orderBy: { createdAt: "desc" },
-          skip,
-          take: limit,
-        }),
-        prisma.subscription.count({ where }),
-      ]);
-    } catch (dbError) {
-      console.error("DB 연결 실패 (GET /api/subscriptions):", dbError);
-      return NextResponse.json([]);
-    }
+    const [subscriptions, total] = await Promise.all([
+      prisma.subscription.findMany({
+        where,
+        include: {
+          user: true,
+          items: { include: { product: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.subscription.count({ where }),
+    ]);
 
     return NextResponse.json({
       subscriptions,
@@ -55,11 +53,8 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
-    console.error("GET /api/subscriptions error:", error);
-    return NextResponse.json(
-      { error: "구독 목록을 불러올 수 없습니다." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("GET /api/admin/subscriptions error:", err);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }

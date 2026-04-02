@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@repo/db";
+import { requireAdmin } from "../../../../lib/auth-guard";
 
 export async function GET(request: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { searchParams } = request.nextUrl;
     const period = searchParams.get("period") ?? "daily";
@@ -11,28 +15,17 @@ export async function GET(request: NextRequest) {
     startDate.setDate(startDate.getDate() - days);
     startDate.setHours(0, 0, 0, 0);
 
-    let payments;
-    try {
-      payments = await prisma.payment.findMany({
-        where: {
-          status: "COMPLETED",
-          createdAt: { gte: startDate },
-        },
-        select: {
-          amount: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: "asc" },
-      });
-    } catch (dbError) {
-      console.error("DB 연결 실패 (GET /api/stats/revenue):", dbError);
-      return NextResponse.json({
-        period,
-        days,
-        totalRevenue: 0,
-        data: [],
-      });
-    }
+    const payments = await prisma.payment.findMany({
+      where: {
+        status: "DONE",
+        createdAt: { gte: startDate },
+      },
+      select: {
+        amount: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
 
     // Group by period
     const grouped = new Map<string, number>();
@@ -72,11 +65,8 @@ export async function GET(request: NextRequest) {
       totalRevenue,
       data: revenue,
     });
-  } catch (error) {
-    console.error("GET /api/stats/revenue error:", error);
-    return NextResponse.json(
-      { error: "매출 통계를 불러올 수 없습니다." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("GET /api/admin/stats/revenue error:", err);
+    return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }
