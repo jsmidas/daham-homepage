@@ -6,7 +6,7 @@ import { Suspense } from "react";
 
 function FailContent() {
   const searchParams = useSearchParams();
-  const message = searchParams.get("message") ?? "결제 처리 중 오류가 발생했습니다.";
+  const message = searchParams.get("message") ?? searchParams.get("code") ?? "결제 처리 중 오류가 발생했습니다.";
 
   return (
     <div className="min-h-screen bg-brand-dark flex items-center justify-center px-4">

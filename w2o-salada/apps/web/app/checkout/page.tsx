@@ -60,34 +60,39 @@ export default function CheckoutPage() {
       return;
     }
 
-    // 2. 토스페이먼츠 결제 위젯 호출
-    // 테스트 모드에서는 결제 없이 바로 성공 처리
+    // 2. 토스페이먼츠 결제 호출
     const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
 
     if (!TOSS_CLIENT_KEY) {
-      // 토스 키가 없으면 테스트 모드로 바로 결제 완료 처리
-      clearCart();
-      router.push(`/checkout/success?orderId=${order.id}&orderNo=${order.orderNo}`);
+      alert("결제 키가 설정되지 않았습니다.");
+      setLoading(false);
       return;
     }
 
-    // 토스페이먼츠 SDK 로드 (실제 연동 시)
     try {
       const { loadTossPayments } = await import("@tosspayments/tosspayments-sdk");
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-      const payment = tossPayments.payment({ customerKey: (session.user as { id?: string }).id ?? "" });
+      const userId = (session.user as { id?: string }).id ?? "guest";
+      const payment = tossPayments.payment({ customerKey: userId });
+
+      const orderName = items.length > 1
+        ? `${items[0]!.name} 외 ${items.length - 1}건`
+        : items[0]!.name;
 
       await payment.requestPayment({
         method: "CARD",
         amount: { value: finalTotal, currency: "KRW" },
         orderId: order.orderNo,
-        orderName: items.length > 1
-          ? `${items[0]!.name} 외 ${items.length - 1}건`
-          : items[0]!.name,
+        orderName,
+        customerName: address.name || session.user?.name || "고객",
         successUrl: `${window.location.origin}/checkout/success?orderId=${order.id}`,
         failUrl: `${window.location.origin}/checkout/fail?orderId=${order.id}`,
       });
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "결제 중 오류가 발생했습니다.";
+      if (msg !== "사용자가 결제를 취소했습니다.") {
+        alert(msg);
+      }
       setLoading(false);
     }
   };
