@@ -129,12 +129,12 @@ export default function CartPage() {
             </div>
           </div>
 
-          <a
+          <Link
             href="/checkout"
             className="block w-full mt-6 py-3.5 bg-brand-amber text-white rounded-xl font-bold text-lg hover:opacity-90 transition text-center"
           >
             주문하기
-          </a>
+          </Link>
         </div>
       </div>
     </div>

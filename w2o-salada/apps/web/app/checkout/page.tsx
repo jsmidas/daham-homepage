@@ -7,10 +7,11 @@ import Link from "next/link";
 import { useCart } from "../store/cart";
 
 export default function CheckoutPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [address, setAddress] = useState({
     name: "",
     phone: "",
@@ -23,17 +24,19 @@ export default function CheckoutPage() {
   const deliveryFee = totalPrice() >= 15000 ? 0 : 3000;
   const finalTotal = totalPrice() + deliveryFee;
 
-  useEffect(() => {
-    if (!session) {
-      router.push("/login?redirect=/checkout");
-    }
-  }, [session, router]);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (items.length === 0) {
+    if (status === "unauthenticated") {
+      router.push("/login?redirect=/checkout");
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (mounted && items.length === 0) {
       router.push("/cart");
     }
-  }, [items, router]);
+  }, [mounted, items, router]);
 
   const handleOrder = async () => {
     if (!session?.user) return;
