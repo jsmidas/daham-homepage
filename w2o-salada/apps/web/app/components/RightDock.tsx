@@ -168,18 +168,19 @@ export default function RightDock() {
             );
           })}
           {/* 앱 설치 버튼 - FAQ 하단에 이어서 */}
-          {!isInstalled && (
-            <button
-              type="button"
-              onClick={install}
-              className="flex w-full flex-col items-center justify-center gap-0.5 border-t border-brand-primary/20 bg-gradient-to-br from-brand-primary to-brand-primaryDark px-1 py-2.5 text-white transition-colors hover:brightness-110"
-            >
-              <span className="material-symbols-outlined text-[18px] leading-none" aria-hidden>
-                add_to_home_screen
-              </span>
-              <span className="text-[10px] font-bold leading-tight">앱 설치</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={install}
+            disabled={isInstalled}
+            className="flex w-full flex-col items-center justify-center gap-0.5 border-t border-brand-primary/20 bg-gradient-to-br from-brand-primary to-brand-primaryDark px-1 py-2.5 text-white transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined text-[18px] leading-none" aria-hidden>
+              {isInstalled ? "check_circle" : "add_to_home_screen"}
+            </span>
+            <span className="text-[10px] font-bold leading-tight">
+              {isInstalled ? "설치됨" : "앱 설치"}
+            </span>
+          </button>
         </div>
 
         {/* 3. 주문/장바구니/구독 */}
