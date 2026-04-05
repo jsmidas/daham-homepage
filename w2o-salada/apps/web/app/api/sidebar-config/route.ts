@@ -9,8 +9,8 @@ const DEFAULT_CONFIG = {
     href: "/about-service",
   },
   support: {
-    kakaoUrl: "https://pf.kakao.com/_xxxxxx/chat",
-    phone: "1588-0000",
+    kakaoUrl: "https://pf.kakao.com/_xfLLuX/chat",
+    phone: "053-721-7794",
   },
   faqs: [
     {

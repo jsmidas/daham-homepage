@@ -27,7 +27,7 @@ type SidebarConfig = {
 
 const DEFAULT_CONFIG: SidebarConfig = {
   hero: { line1: "새벽배송", line2: "안내", subtitle: "W2O SALADA", href: "/about-service" },
-  support: { kakaoUrl: "https://pf.kakao.com/_xxxxxx/chat", phone: "1588-0000" },
+  support: { kakaoUrl: "https://pf.kakao.com/_xfLLuX/chat", phone: "053-721-7794" },
   faqs: [
     { id: "area", q: "배송 지역", a: "서울 전 지역, 인천 일부, 경기 주요 신도시(판교·분당·일산·수원·용인)에 새벽배송 가능합니다.", href: "/about-service" },
     { id: "cutoff", q: "주문 마감", a: "매일 밤 11시까지 주문하시면 다음날 새벽 6시 이전에 도착합니다.", href: "/about-service" },
