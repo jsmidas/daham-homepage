@@ -7,6 +7,20 @@ export const metadata: Metadata = {
   title: "W2O SALADA - 일어나면 이미 준비된 하루",
   description: "신선한 샐러드 새벽배송 서비스. 정기구독으로 매일 아침 건강한 하루를 시작하세요.",
   keywords: ["샐러드", "새벽배송", "정기구독", "건강식", "다이어트", "W2O"],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "W2O SALADA",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
+};
+
+export const viewport = {
+  themeColor: "#1D9E75",
 };
 
 export default function RootLayout({

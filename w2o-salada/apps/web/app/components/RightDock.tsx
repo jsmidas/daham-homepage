@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useInstallPWA } from "./InstallPWA";
 
 type DockItem = {
   href?: string;
@@ -88,6 +89,7 @@ export default function RightDock() {
   const [showTop, setShowTop] = useState(false);
   const [openFaq, setOpenFaq] = useState<string | null>(null);
   const [config, setConfig] = useState<SidebarConfig>(DEFAULT_CONFIG);
+  const { canInstall, install, isInstalled } = useInstallPWA();
 
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 400);
@@ -146,22 +148,38 @@ export default function RightDock() {
           </div>
         </Link>
 
-        {/* 2. FAQ 칩 - 자주 묻는 궁금증 */}
+        {/* 2. FAQ 칩 - 자주 묻는 궁금증 + 앱 설치 */}
         <div className="overflow-hidden rounded-l-xl bg-white shadow-xl">
-          {config.faqs.map((faq) => (
+          {config.faqs.map((faq) => {
+            const isOpen = openFaq === faq.id;
+            return (
+              <button
+                key={faq.id}
+                type="button"
+                onClick={() => setOpenFaq(isOpen ? null : faq.id)}
+                className={`flex w-full items-center justify-center border-b border-black/5 px-1 py-2.5 text-[11px] font-semibold leading-tight transition-colors ${
+                  isOpen
+                    ? "bg-brand-mint/60 text-brand-primaryDark"
+                    : "text-brand-dark hover:bg-brand-mint/30"
+                }`}
+              >
+                {faq.q}
+              </button>
+            );
+          })}
+          {/* 앱 설치 버튼 - FAQ 하단에 이어서 */}
+          {!isInstalled && (
             <button
-              key={faq.id}
               type="button"
-              onClick={() => setOpenFaq(openFaq === faq.id ? null : faq.id)}
-              className={`flex w-full items-center justify-center border-b border-black/5 px-1 py-2.5 text-[11px] font-semibold leading-tight transition-colors last:border-b-0 ${
-                openFaq === faq.id
-                  ? "bg-brand-mint/60 text-brand-primaryDark"
-                  : "text-brand-dark hover:bg-brand-mint/30"
-              }`}
+              onClick={install}
+              className="flex w-full flex-col items-center justify-center gap-0.5 border-t border-brand-primary/20 bg-gradient-to-br from-brand-primary to-brand-primaryDark px-1 py-2.5 text-white transition-colors hover:brightness-110"
             >
-              {faq.q}
+              <span className="material-symbols-outlined text-[18px] leading-none" aria-hidden>
+                add_to_home_screen
+              </span>
+              <span className="text-[10px] font-bold leading-tight">앱 설치</span>
             </button>
-          ))}
+          )}
         </div>
 
         {/* 3. 주문/장바구니/구독 */}

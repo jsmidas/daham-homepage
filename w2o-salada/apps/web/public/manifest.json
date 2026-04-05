@@ -1,0 +1,26 @@
+{
+  "name": "W2O SALADA - 샐러드 새벽배송",
+  "short_name": "W2O SALADA",
+  "description": "일어나면 이미 준비된 하루. 샐러드 새벽배송 서비스",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F2318",
+  "theme_color": "#1D9E75",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "shopping", "lifestyle"],
+  "lang": "ko"
+}
