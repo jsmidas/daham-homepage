@@ -3,6 +3,8 @@
 @theme {
   /* W2O SALADA 브랜드 컬러 */
   --color-brand-green: #1D9E75;
+  --color-brand-primary: #1D9E75;
+  --color-brand-primaryDark: #167A5B;
   --color-brand-mint: #5DCAA5;
   --color-brand-amber: #EF9F27;
   --color-brand-dark: #0A1A0F;
