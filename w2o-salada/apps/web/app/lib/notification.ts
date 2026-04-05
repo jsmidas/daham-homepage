@@ -1,0 +1,224 @@
+/**
+ * 솔라피(Solapi) 알림톡 발송 공통 모듈
+ *
+ * 환경변수:
+ *   SOLAPI_API_KEY      — 솔라피 API 키
+ *   SOLAPI_API_SECRET   — 솔라피 API 시크릿
+ *   SOLAPI_PFID         — 카카오 비즈니스 채널 발신프로필 ID
+ *   SOLAPI_SENDER_PHONE — 발신자 전화번호 (SMS 폴백용)
+ *
+ * 위 4개 중 하나라도 없으면 Mock 모드로 동작 (콘솔 출력 + DB 기록만, 실발송 X)
+ */
+
+import crypto from "crypto";
+import { prisma } from "@repo/db";
+
+// ── 템플릿 코드 ───────────────────────────────────────────
+export const TEMPLATE = {
+  ORDER_PAID: "ORDER_PAID",
+  DELIVERY_START: "DELIVERY_START",
+  DELIVERY_DONE: "DELIVERY_DONE",
+  SUB_PAID: "SUB_PAID",
+  PAYMENT_FAIL: "PAYMENT_FAIL",
+} as const;
+
+export type TemplateCode = (typeof TEMPLATE)[keyof typeof TEMPLATE];
+
+// 템플릿별 미리보기 문구 (솔라피 템플릿 승인 후 templateId로 대체됨)
+export const TEMPLATE_PREVIEW: Record<TemplateCode, string> = {
+  ORDER_PAID:
+    "[W2O SALADA]\n#{고객명}님, 주문이 완료되었습니다.\n주문번호: #{주문번호}\n내일 새벽 도착 예정입니다.",
+  DELIVERY_START:
+    "[W2O SALADA]\n#{고객명}님, 새벽배송이 출발했습니다.\n안전하게 배송해드리겠습니다.",
+  DELIVERY_DONE:
+    "[W2O SALADA]\n#{고객명}님, 문 앞에 도착했습니다.\n맛있게 드세요!",
+  SUB_PAID:
+    "[W2O SALADA]\n정기구독 결제가 완료되었습니다.\n금액: #{금액}원",
+  PAYMENT_FAIL:
+    "[W2O SALADA]\n결제에 실패했습니다.\n카드 정보를 확인해주세요.",
+};
+
+// 솔라피 템플릿 ID 매핑 (승인 후 환경변수나 DB에서 읽어오도록 교체 가능)
+const TEMPLATE_ID_MAP: Record<TemplateCode, string | undefined> = {
+  ORDER_PAID: process.env.SOLAPI_TEMPLATE_ORDER_PAID,
+  DELIVERY_START: process.env.SOLAPI_TEMPLATE_DELIVERY_START,
+  DELIVERY_DONE: process.env.SOLAPI_TEMPLATE_DELIVERY_DONE,
+  SUB_PAID: process.env.SOLAPI_TEMPLATE_SUB_PAID,
+  PAYMENT_FAIL: process.env.SOLAPI_TEMPLATE_PAYMENT_FAIL,
+};
+
+// ── 변수 치환 ─────────────────────────────────────────────
+function renderTemplate(
+  templateCode: TemplateCode,
+  variables: Record<string, string | number>,
+): string {
+  let text = TEMPLATE_PREVIEW[templateCode];
+  for (const [key, value] of Object.entries(variables)) {
+    text = text.replaceAll(`#{${key}}`, String(value));
+  }
+  return text;
+}
+
+// 전화번호 정규화: "010-1234-5678" → "01012345678"
+function normalizePhone(phone: string): string {
+  return phone.replace(/[^0-9]/g, "");
+}
+
+// ── 환경변수 체크 ─────────────────────────────────────────
+function isLiveMode(): boolean {
+  return Boolean(
+    process.env.SOLAPI_API_KEY &&
+      process.env.SOLAPI_API_SECRET &&
+      process.env.SOLAPI_PFID,
+  );
+}
+
+// ── 솔라피 API 호출 ───────────────────────────────────────
+// 솔라피 인증: HMAC-SHA256 signature (date + salt)
+// 문서: https://developers.solapi.com/references/authentication
+function buildSolapiAuthHeader(): string {
+  const apiKey = process.env.SOLAPI_API_KEY!;
+  const apiSecret = process.env.SOLAPI_API_SECRET!;
+  const date = new Date().toISOString();
+  const salt = crypto.randomBytes(16).toString("hex");
+  const signature = crypto
+    .createHmac("sha256", apiSecret)
+    .update(date + salt)
+    .digest("hex");
+  return `HMAC-SHA256 apiKey=${apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+}
+
+async function callSolapi(
+  to: string,
+  templateCode: TemplateCode,
+  renderedText: string,
+  variables: Record<string, string | number>,
+): Promise<{ ok: boolean; messageId?: string; error?: string }> {
+  const templateId = TEMPLATE_ID_MAP[templateCode];
+
+  // 솔라피 변수 형식: {"#{고객명}": "홍길동"} 형태로 변환
+  const solapiVariables: Record<string, string> = {};
+  for (const [key, value] of Object.entries(variables)) {
+    solapiVariables[`#{${key}}`] = String(value);
+  }
+
+  const body = {
+    message: {
+      to,
+      from: process.env.SOLAPI_SENDER_PHONE ?? "",
+      type: templateId ? "ATA" : "SMS", // ATA=알림톡, SMS 폴백
+      ...(templateId
+        ? {
+            kakaoOptions: {
+              pfId: process.env.SOLAPI_PFID!,
+              templateId,
+              variables: solapiVariables,
+              disableSms: false, // 알림톡 실패 시 SMS 자동 전환
+            },
+          }
+        : {
+            text: renderedText, // 템플릿 ID 없으면 SMS로 발송
+          }),
+    },
+  };
+
+  try {
+    const res = await fetch("https://api.solapi.com/messages/v4/send", {
+      method: "POST",
+      headers: {
+        Authorization: buildSolapiAuthHeader(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { ok: false, error: data.errorMessage ?? JSON.stringify(data) };
+    }
+    return { ok: true, messageId: data.messageId };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
+}
+
+// ── 메인 발송 함수 ────────────────────────────────────────
+export interface SendAlimtalkParams {
+  userId: string;
+  to: string; // 수신자 전화번호
+  templateCode: TemplateCode;
+  variables: Record<string, string | number>;
+}
+
+export interface SendAlimtalkResult {
+  ok: boolean;
+  mocked: boolean;
+  notificationId: string;
+  error?: string;
+}
+
+export async function sendAlimtalk(
+  params: SendAlimtalkParams,
+): Promise<SendAlimtalkResult> {
+  const { userId, to, templateCode, variables } = params;
+  const normalizedTo = normalizePhone(to);
+  const renderedText = renderTemplate(templateCode, variables);
+  const mocked = !isLiveMode();
+
+  // 1. DB에 PENDING으로 기록
+  const notification = await prisma.notification.create({
+    data: {
+      userId,
+      type: "ALIMTALK",
+      templateCode,
+      content: renderedText,
+      status: "PENDING",
+    },
+  });
+
+  // 2. Mock 모드: 콘솔 출력 후 바로 SENT 처리
+  if (mocked) {
+    console.log("[알림톡 Mock 발송]", {
+      to: normalizedTo,
+      templateCode,
+      content: renderedText,
+    });
+    await prisma.notification.update({
+      where: { id: notification.id },
+      data: { status: "SENT", sentAt: new Date() },
+    });
+    return { ok: true, mocked: true, notificationId: notification.id };
+  }
+
+  // 3. 실발송
+  const result = await callSolapi(normalizedTo, templateCode, renderedText, variables);
+
+  await prisma.notification.update({
+    where: { id: notification.id },
+    data: {
+      status: result.ok ? "SENT" : "FAILED",
+      sentAt: result.ok ? new Date() : null,
+    },
+  });
+
+  return {
+    ok: result.ok,
+    mocked: false,
+    notificationId: notification.id,
+    error: result.error,
+  };
+}
+
+// ── 안전 래퍼 (알림톡 실패가 주 로직을 망치지 않도록) ─────
+export async function sendAlimtalkSafe(
+  params: SendAlimtalkParams,
+): Promise<void> {
+  try {
+    const result = await sendAlimtalk(params);
+    if (!result.ok) {
+      console.warn("알림톡 발송 실패:", result.error, params.templateCode);
+    }
+  } catch (err) {
+    console.error("알림톡 발송 오류:", err);
+  }
+}

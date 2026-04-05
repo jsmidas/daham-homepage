@@ -256,7 +256,9 @@ export default function PageEditorPage() {
     if (idx === 0) return;
     setForm((prev) => {
       const order = [...prev.section_order];
-      [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
+      const tmp = order[idx - 1]!;
+      order[idx - 1] = order[idx]!;
+      order[idx] = tmp;
       return { ...prev, section_order: order };
     });
   }
@@ -264,7 +266,9 @@ export default function PageEditorPage() {
     setForm((prev) => {
       if (idx >= prev.section_order.length - 1) return prev;
       const order = [...prev.section_order];
-      [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
+      const tmp = order[idx]!;
+      order[idx] = order[idx + 1]!;
+      order[idx + 1] = tmp;
       return { ...prev, section_order: order };
     });
   }

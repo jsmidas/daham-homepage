@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendAlimtalkSafe, TEMPLATE } from "../../lib/notification";
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY ?? "";
 
@@ -37,13 +38,14 @@ export async function POST(request: Request) {
     // 결제 승인 성공 — DB 저장 시도 (실패해도 결제는 완료)
     try {
       const { prisma } = await import("@repo/db");
-      await prisma.order.update({
+      const order = await prisma.order.update({
         where: { orderNo: orderId },
         data: { status: "PAID", paymentKey, paidAt: new Date() },
+        include: { user: true },
       });
       await prisma.payment.create({
         data: {
-          orderId,
+          orderId: order.id,
           paymentKey,
           method: tossData.method,
           amount,
@@ -52,6 +54,19 @@ export async function POST(request: Request) {
           rawResponse: JSON.stringify(tossData),
         },
       });
+
+      // 주문 완료 알림톡 발송 (실패해도 결제 흐름 유지)
+      if (order.user.phone) {
+        await sendAlimtalkSafe({
+          userId: order.user.id,
+          to: order.user.phone,
+          templateCode: TEMPLATE.ORDER_PAID,
+          variables: {
+            고객명: order.user.name,
+            주문번호: order.orderNo,
+          },
+        });
+      }
     } catch {
       console.warn("DB 저장 실패 (결제는 승인됨):", orderId);
     }

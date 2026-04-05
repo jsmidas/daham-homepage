@@ -63,7 +63,9 @@ export default function SidebarAdminPage() {
 
   const updateFaq = (index: number, key: keyof Faq, value: string) => {
     const faqs = [...config.faqs];
-    faqs[index] = { ...faqs[index], [key]: value };
+    const current = faqs[index];
+    if (!current) return;
+    faqs[index] = { ...current, [key]: value };
     setConfig({ ...config, faqs });
   };
 

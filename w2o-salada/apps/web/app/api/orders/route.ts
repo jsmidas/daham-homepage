@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@repo/db";
+import { requireAuth } from "../../lib/auth-guard";
 
 function generateOrderNo() {
   const now = new Date();

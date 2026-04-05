@@ -13,6 +13,7 @@ const menuItems = [
   { href: "/admin/subscriptions", icon: "autorenew", label: "구독 관리" },
   { href: "/admin/delivery", icon: "local_shipping", label: "배송 관리" },
   { href: "/admin/members", icon: "people", label: "회원 관리" },
+  { href: "/admin/notifications", icon: "notifications", label: "알림톡" },
   { href: "/admin/stats", icon: "bar_chart", label: "통계" },
   { href: "/admin/sidebar", icon: "view_sidebar", label: "사이드바" },
   { href: "/admin/settings", icon: "settings", label: "설정" },

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../lib/auth-guard";
-import { supabase } from "../../lib/supabase";
+import { getSupabase } from "../../lib/supabase";
 
 export async function POST(request: Request) {
   const { error } = await requireAdmin();
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
     // Supabase Storage 업로드
+    const supabase = getSupabase();
     const arrayBuffer = await file.arrayBuffer();
     const { data, error: uploadError } = await supabase.storage
       .from("images")

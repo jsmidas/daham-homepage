@@ -82,7 +82,7 @@ function FeatureCard({ icon, title, desc, stat, statLabel, delay }: {
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry?.isIntersecting) {
           setTimeout(() => { setVisible(true); start(); }, delay);
           observer.disconnect();
         }

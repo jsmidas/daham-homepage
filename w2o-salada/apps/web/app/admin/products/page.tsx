@@ -11,6 +11,7 @@ type Product = {
   originalPrice: number | null;
   price: number;
   kcal: number | null;
+  description: string;
   isActive: boolean;
   tags: string | null;
   imageUrl: string | null;

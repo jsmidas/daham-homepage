@@ -127,7 +127,8 @@ const config: NextAuthConfig = {
 };
 
 const result = NextAuth(config);
-export const handlers = result.handlers;
-export const signIn = result.signIn;
-export const signOut = result.signOut;
-export const auth = result.auth;
+// NextAuth v5 beta 타입 추론 이슈로 any 명시
+export const handlers: any = result.handlers;
+export const signIn: any = result.signIn;
+export const signOut: any = result.signOut;
+export const auth: any = result.auth;
