@@ -45,7 +45,7 @@ body {
 
 @layer utilities {
   .animate-shimmer {
-    animation: shimmer 1s ease-in-out infinite;
+    animation: shimmer 0.5s ease-in-out infinite;
   }
 }
 
