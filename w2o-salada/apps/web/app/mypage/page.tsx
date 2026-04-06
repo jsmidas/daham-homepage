@@ -8,6 +8,7 @@ import Link from "next/link";
 const menus = [
   { href: "/mypage/orders", icon: "receipt_long", label: "주문내역", desc: "주문 및 배송 확인" },
   { href: "/mypage/subscription", icon: "autorenew", label: "구독관리", desc: "정기구독 현황" },
+  { href: "/mypage/reviews", icon: "rate_review", label: "내 리뷰", desc: "리뷰 작성 · 관리" },
   { href: "/mypage/addresses", icon: "location_on", label: "배송지", desc: "주소 관리" },
   { href: "/mypage/profile", icon: "person", label: "프로필", desc: "개인정보 수정" },
 ];

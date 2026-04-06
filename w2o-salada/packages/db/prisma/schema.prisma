@@ -26,6 +26,7 @@ model User {
   orders        Order[]
   subscriptions Subscription[]
   notifications Notification[]
+  reviews       Review[]
 
   @@map("users")
 }
@@ -90,6 +91,7 @@ model Product {
   menuSchedules           MenuSchedule[]
   menuAssignments         MenuAssignment[]
   subscriptionSelections  SubscriptionSelection[]
+  reviews                 Review[]
 
   @@map("products")
 }
@@ -402,6 +404,24 @@ model MenuSchedule {
 
   @@unique([year, month, week, day, slot])
   @@map("menu_schedules")
+}
+
+// ── 리뷰 ──
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  orderId   String?  // 주문 연결 (선택)
+  rating    Int      // 1~5
+  content   String
+  images    String?  // JSON array of image URLs
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews")
 }
 
 // ── 쇼핑몰 설정 (key-value) ──
