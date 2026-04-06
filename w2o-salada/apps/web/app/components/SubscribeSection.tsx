@@ -24,7 +24,7 @@ const plans = [
     name: "정기구독",
     desc: "꾸준한 건강 관리의 시작",
     highlight: "주 2회 배송",
-    composition: "샐러드 × 2개 × 4주",
+    composition: "샐러드 × 2개 × 주 2회 × 4주",
     originalPrice: "120,000원",
     priceLabel: "월 94,400원",
     priceDetail: "5,900원 × 2개 × 주 2회 × 4주",
