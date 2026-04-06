@@ -17,8 +17,15 @@ type Product = {
 };
 
 const dayLabels = ["월", "화", "수", "목", "금"];
+const weekLabels = ["1주차", "2주차", "3주차", "4주차"];
 
-type Selection = { [dayIndex: number]: string[] }; // dayIndex → productId[]
+// week-day 복합 키
+type DayKey = `${number}-${number}`; // "week-day"
+type Selection = { [key: DayKey]: string[] };
+
+function makeDayKey(week: number, day: number): DayKey {
+  return `${week}-${day}`;
+}
 
 export default function SubscribePage() {
   return (
@@ -36,7 +43,8 @@ function SubscribeContent() {
   const [plan, setPlan] = useState<"trial" | "subscription" | "mixed">(initialPlan);
   const [products, setProducts] = useState<Product[]>([]);
   const [selection, setSelection] = useState<Selection>({});
-  const [selectedDay, setSelectedDay] = useState(0);
+  const [selectedWeek, setSelectedWeek] = useState(0);
+  const [selectedDay, setSelectedDay] = useState(1); // 화요일 기본
 
   useEffect(() => {
     fetch("/api/products")
@@ -45,39 +53,54 @@ function SubscribeContent() {
       .catch(() => setProducts([]));
   }, []);
 
-  // 요일별 배송 메뉴 (데모: 상품을 요일별로 분배)
-  const menuByDay = useMemo(() => {
-    return dayLabels.map((_, i) => {
-      if (products.length < 2) return [];
-      const start = (i * 3) % products.length;
-      const dayProducts: Product[] = [];
-      for (let j = 0; j < Math.min(4, products.length); j++) {
-        dayProducts.push(products[(start + j) % products.length]);
+  // 배송 요일: 화(1), 목(3)
+  const deliveryDayIndices = [1, 3];
+
+  // 주차 수: 구독/혼합은 4주, 맛보기는 1주
+  const weekCount = plan === "trial" ? 1 : 4;
+
+  // 전체 배송일 목록
+  const allDeliveryKeys: DayKey[] = useMemo(() => {
+    const keys: DayKey[] = [];
+    for (let w = 0; w < weekCount; w++) {
+      for (const d of deliveryDayIndices) {
+        keys.push(makeDayKey(w, d));
       }
-      return dayProducts;
-    });
-  }, [products]);
+    }
+    return keys;
+  }, [weekCount]);
 
-  // 맛보기: 1일만, 구독/혼합: 주 2회(화/목 기본)
-  const deliveryDays = plan === "trial" ? [selectedDay] : [1, 3]; // 화, 목
+  // 요일별 배송 메뉴 (데모: 상품을 요일+주차별로 분배)
+  const getMenuForDay = (week: number, day: number): Product[] => {
+    if (products.length < 2) return [];
+    const seed = week * 5 + day;
+    const start = (seed * 3) % products.length;
+    const dayProducts: Product[] = [];
+    for (let j = 0; j < Math.min(4, products.length); j++) {
+      dayProducts.push(products[(start + j) % products.length]);
+    }
+    return dayProducts;
+  };
 
-  const toggleItem = (dayIdx: number, productId: string) => {
+  const currentKey = makeDayKey(selectedWeek, selectedDay);
+
+  const toggleItem = (key: DayKey, productId: string) => {
     setSelection((prev) => {
-      const current = prev[dayIdx] || [];
+      const current = prev[key] || [];
       if (current.includes(productId)) {
-        return { ...prev, [dayIdx]: current.filter((id) => id !== productId) };
+        return { ...prev, [key]: current.filter((id) => id !== productId) };
       }
-      if (current.length >= 2) return prev; // 최대 2개
-      return { ...prev, [dayIdx]: [...current, productId] };
+      if (current.length >= 2) return prev;
+      return { ...prev, [key]: [...current, productId] };
     });
   };
 
-  const isSelected = (dayIdx: number, productId: string) => {
-    return (selection[dayIdx] || []).includes(productId);
+  const isSelected = (key: DayKey, productId: string) => {
+    return (selection[key] || []).includes(productId);
   };
 
-  const getSelectedCount = (dayIdx: number) => {
-    return (selection[dayIdx] || []).length;
+  const getSelectedCount = (key: DayKey) => {
+    return (selection[key] || []).length;
   };
 
   // 가격 계산
@@ -85,8 +108,8 @@ function SubscribeContent() {
     let total = 0;
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    for (const dayIdx of deliveryDays) {
-      const items = selection[dayIdx] || [];
+    for (const key of allDeliveryKeys) {
+      const items = selection[key] || [];
       for (const id of items) {
         const product = productMap.get(id);
         if (product) {
@@ -95,22 +118,24 @@ function SubscribeContent() {
       }
     }
 
+    const deliveryCount = allDeliveryKeys.length;
     if (plan !== "trial") {
-      return { perDelivery: total / Math.max(deliveryDays.length, 1), monthly: total * 4, total };
+      return { perDelivery: deliveryCount > 0 ? total / deliveryCount : 0, monthly: total, total };
     }
     return { perDelivery: total, monthly: 0, total };
   };
 
   const price = calculatePrice();
 
-  // 최소 2개 선택 확인
-  const allDeliveriesReady = deliveryDays.every((d) => getSelectedCount(d) >= 2);
+  // 전체 배송일 선택 완료 확인
+  const allDeliveriesReady = allDeliveryKeys.every((k) => getSelectedCount(k) >= 2);
+  const completedCount = allDeliveryKeys.filter((k) => getSelectedCount(k) >= 2).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f7fdf9] to-[#edf7f0]">
       {/* 헤더 */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#1D9E75]/10">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1.5">
             <span className="text-lg font-black text-brand-green">W2O</span>
             <span className="text-xs text-gray-400 tracking-widest">SALADA</span>
@@ -121,11 +146,15 @@ function SubscribeContent() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* 1단계: 플랜 선택 */}
-        <div className="mb-10">
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        {/* 타이틀 */}
+        <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-[#0A1A0F] mb-2">식단을 선택하세요</h1>
-          <p className="text-[#4a7a5e] text-sm">원하는 메뉴 조합을 자유롭게 골라보세요</p>
+          <p className="text-[#4a7a5e] text-sm">
+            {plan === "trial"
+              ? "맛보기 1회 배송 — 화·목 중 원하는 날의 메뉴 2개를 선택하세요"
+              : `4주간 배송될 메뉴를 미리 선택하세요 (주 2회 × 4주 = 총 ${allDeliveryKeys.length}회)`}
+          </p>
         </div>
 
         {/* 플랜 토글 */}
@@ -137,7 +166,7 @@ function SubscribeContent() {
           ]).map((p) => (
             <button
               key={p.key}
-              onClick={() => setPlan(p.key)}
+              onClick={() => { setPlan(p.key); setSelectedWeek(0); setSelectedDay(1); }}
               className={`flex-1 py-3.5 rounded-xl font-semibold text-sm transition border ${
                 plan === p.key
                   ? `${p.activeColor} text-white shadow-md`
@@ -149,14 +178,58 @@ function SubscribeContent() {
           ))}
         </div>
 
+        {/* 진행 상황 바 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-[#4a7a5e]">메뉴 선택 진행</span>
+            <span className="text-sm font-semibold text-[#1D9E75]">{completedCount}/{allDeliveryKeys.length}회 완료</span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#1D9E75] to-[#5DCAA5] rounded-full transition-all duration-500"
+              style={{ width: `${allDeliveryKeys.length > 0 ? (completedCount / allDeliveryKeys.length) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 왼쪽: 식단 선택 */}
           <div className="lg:col-span-2">
+            {/* 주차 탭 */}
+            {weekCount > 1 && (
+              <div className="flex gap-2 mb-4">
+                {weekLabels.slice(0, weekCount).map((label, w) => {
+                  const weekComplete = deliveryDayIndices.every(
+                    (d) => getSelectedCount(makeDayKey(w, d)) >= 2
+                  );
+                  return (
+                    <button
+                      key={w}
+                      onClick={() => { setSelectedWeek(w); setSelectedDay(deliveryDayIndices[0]); }}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition relative ${
+                        selectedWeek === w
+                          ? "bg-[#0A1A0F] text-white shadow-md"
+                          : "bg-white text-[#4a7a5e] border border-[#1D9E75]/15 hover:border-[#1D9E75]/40"
+                      }`}
+                    >
+                      {label}
+                      {weekComplete && (
+                        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#1D9E75] text-white text-[10px] rounded-full flex items-center justify-center">
+                          <span className="material-symbols-outlined text-[12px]">check</span>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* 요일 탭 */}
             <div className="flex gap-2 mb-6">
               {dayLabels.map((day, i) => {
-                const isDeliveryDay = deliveryDays.includes(i);
-                const count = getSelectedCount(i);
+                const isDeliveryDay = deliveryDayIndices.includes(i);
+                const key = makeDayKey(selectedWeek, i);
+                const count = getSelectedCount(key);
                 return (
                   <button
                     key={day}
@@ -172,8 +245,10 @@ function SubscribeContent() {
                   >
                     {day}
                     {isDeliveryDay && count > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#EF9F27] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                        {count}
+                      <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 text-white text-[10px] font-bold rounded-full flex items-center justify-center ${
+                        count >= 2 ? "bg-[#1D9E75]" : "bg-[#EF9F27]"
+                      }`}>
+                        {count >= 2 ? <span className="material-symbols-outlined text-[12px]">check</span> : count}
                       </span>
                     )}
                   </button>
@@ -184,28 +259,30 @@ function SubscribeContent() {
             {/* 선택 안내 */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-[#4a7a5e] text-sm">
+                {weekCount > 1 && <span className="font-semibold text-[#0A1A0F]">{weekLabels[selectedWeek]} </span>}
                 <span className="font-semibold text-[#0A1A0F]">{dayLabels[selectedDay]}요일</span> 배송 메뉴에서 2개를 선택하세요
               </p>
-              <span className="text-sm font-medium text-[#1D9E75]">
-                {getSelectedCount(selectedDay)}/2 선택
+              <span className={`text-sm font-medium ${getSelectedCount(currentKey) >= 2 ? "text-[#1D9E75]" : "text-[#EF9F27]"}`}>
+                {getSelectedCount(currentKey)}/2 선택
               </span>
             </div>
 
             {/* 메뉴 그리드 */}
-            {!deliveryDays.includes(selectedDay) ? (
+            {!deliveryDayIndices.includes(selectedDay) ? (
               <div className="text-center py-16 text-[#7aaa90] bg-white rounded-2xl border border-[#1D9E75]/10">
                 <span className="material-symbols-outlined text-4xl mb-2 block">event_busy</span>
                 <p className="text-sm">이 요일은 배송일이 아닙니다</p>
+                <p className="text-xs mt-1">화요일 또는 목요일을 선택해주세요</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(menuByDay[selectedDay] || []).map((item) => {
-                  const selected = isSelected(selectedDay, item.id);
-                  const full = getSelectedCount(selectedDay) >= 2 && !selected;
+                {getMenuForDay(selectedWeek, selectedDay).map((item) => {
+                  const selected = isSelected(currentKey, item.id);
+                  const full = getSelectedCount(currentKey) >= 2 && !selected;
                   return (
                     <button
                       key={item.id}
-                      onClick={() => toggleItem(selectedDay, item.id)}
+                      onClick={() => toggleItem(currentKey, item.id)}
                       disabled={full}
                       className={`text-left rounded-2xl border-2 overflow-hidden transition-all duration-200 ${
                         selected
@@ -215,26 +292,21 @@ function SubscribeContent() {
                           : "border-[#1D9E75]/10 hover:border-[#1D9E75]/40 hover:shadow-md"
                       }`}
                     >
-                      {/* 이미지 */}
                       <div className="h-36 bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center relative overflow-hidden">
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
                           <span className="material-symbols-outlined text-[#1D9E75]/25 text-5xl">lunch_dining</span>
                         )}
-                        {/* 선택 체크 */}
                         {selected && (
                           <div className="absolute top-3 right-3 w-8 h-8 bg-[#1D9E75] rounded-full flex items-center justify-center shadow-lg">
                             <span className="material-symbols-outlined text-white text-xl">check</span>
                           </div>
                         )}
-                        {/* 카테고리 */}
                         <span className="absolute top-3 left-3 px-2.5 py-0.5 bg-white/90 backdrop-blur-sm text-[10px] font-semibold text-[#1D9E75] rounded-full">
                           {item.category.name}
                         </span>
                       </div>
-
-                      {/* 정보 */}
                       <div className="p-4">
                         <h3 className="text-[#0A1A0F] font-bold text-sm">{item.name}</h3>
                         <p className="text-[#7aaa90] text-xs mt-1 line-clamp-1">{item.description}</p>
@@ -269,52 +341,55 @@ function SubscribeContent() {
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                   plan === "subscription"
                     ? "bg-[#1D9E75]/10 text-[#1D9E75]"
-                    : plan === "mixed"
-                    ? "bg-[#EF9F27]/10 text-[#EF9F27]"
                     : "bg-[#EF9F27]/10 text-[#EF9F27]"
                 }`}>
                   {plan === "subscription" ? "정기구독" : plan === "mixed" ? "혼합신청" : "맛보기"}
                 </span>
                 <span className="text-[#7aaa90] text-xs">
-                  {plan === "trial" ? "1회 체험" : "주 2회 · 월 결제"}
+                  {plan === "trial" ? "1회 체험 · 화 또는 목" : `주 2회 × 4주 = ${allDeliveryKeys.length}회`}
                 </span>
               </div>
 
-              {/* 선택한 메뉴 */}
-              <div className="space-y-3 mb-6">
-                {deliveryDays.map((dayIdx) => {
-                  const items = selection[dayIdx] || [];
-                  return (
-                    <div key={dayIdx}>
-                      <p className="text-xs font-semibold text-[#7aaa90] mb-1.5">{dayLabels[dayIdx]}요일</p>
-                      {items.length === 0 ? (
-                        <p className="text-xs text-gray-300 italic">메뉴를 선택해주세요</p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {items.map((id) => {
-                            const p = products.find((pr) => pr.id === id);
-                            if (!p) return null;
-                            return (
-                              <div key={id} className="flex justify-between items-center text-sm">
-                                <span className="text-[#0A1A0F] truncate flex-1 mr-2">{p.name}</span>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  {p.originalPrice && p.originalPrice > p.price && plan !== "trial" && (
-                                    <span className="text-gray-400 text-[10px] line-through">{p.originalPrice.toLocaleString()}</span>
-                                  )}
-                                  <span className="text-[#1D9E75] font-semibold text-xs">
-                                    {plan !== "trial"
-                                      ? `${p.price.toLocaleString()}원`
-                                      : `${(p.originalPrice || p.price).toLocaleString()}원`}
-                                  </span>
-                                </div>
+              {/* 선택한 메뉴 — 주차별 */}
+              <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto">
+                {Array.from({ length: weekCount }, (_, w) => (
+                  <div key={w}>
+                    {weekCount > 1 && (
+                      <p className="text-[10px] font-bold text-[#7aaa90] tracking-wider mb-1.5">{weekLabels[w]}</p>
+                    )}
+                    <div className="space-y-2">
+                      {deliveryDayIndices.map((d) => {
+                        const key = makeDayKey(w, d);
+                        const items = selection[key] || [];
+                        return (
+                          <div key={key} className="pl-2 border-l-2 border-[#1D9E75]/10">
+                            <p className="text-xs font-semibold text-[#4a7a5e] mb-1">{dayLabels[d]}</p>
+                            {items.length === 0 ? (
+                              <p className="text-[10px] text-gray-300 italic">미선택</p>
+                            ) : (
+                              <div className="space-y-0.5">
+                                {items.map((id) => {
+                                  const p = products.find((pr) => pr.id === id);
+                                  if (!p) return null;
+                                  return (
+                                    <div key={id} className="flex justify-between items-center">
+                                      <span className="text-[#0A1A0F] text-xs truncate flex-1 mr-2">{p.name}</span>
+                                      <span className="text-[#1D9E75] font-semibold text-[10px] shrink-0">
+                                        {plan !== "trial"
+                                          ? `${p.price.toLocaleString()}원`
+                                          : `${(p.originalPrice || p.price).toLocaleString()}원`}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
 
               {/* 금액 */}
@@ -322,15 +397,9 @@ function SubscribeContent() {
                 {plan !== "trial" ? (
                   <>
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#7aaa90]">1회 배송</span>
+                      <span className="text-[#7aaa90]">1회 배송 평균</span>
                       <span className="text-[#0A1A0F] font-medium">
-                        {price.perDelivery > 0 ? `${price.perDelivery.toLocaleString()}원` : "-"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#7aaa90]">주 2회 × 4주</span>
-                      <span className="text-[#0A1A0F] font-medium">
-                        {price.monthly > 0 ? `${price.monthly.toLocaleString()}원` : "-"}
+                        {price.perDelivery > 0 ? `${Math.round(price.perDelivery).toLocaleString()}원` : "-"}
                       </span>
                     </div>
                     <div className="flex justify-between text-lg font-bold pt-2 border-t border-dashed border-[#1D9E75]/10">
@@ -362,7 +431,7 @@ function SubscribeContent() {
                 }`}
               >
                 {!allDeliveriesReady
-                  ? `메뉴를 선택해주세요 (최소 2개)`
+                  ? `메뉴를 선택해주세요 (${completedCount}/${allDeliveryKeys.length}회 완료)`
                   : plan === "subscription"
                   ? "구독 결제하기"
                   : plan === "mixed"
