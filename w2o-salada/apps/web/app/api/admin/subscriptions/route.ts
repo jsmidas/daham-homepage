@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       where.status = status;
     }
     if (plan) {
-      where.planType = plan;
+      where.selectionMode = plan;
     }
     if (search) {
       where.OR = [
@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
         include: {
           user: true,
           items: { include: { product: true } },
+          periods: { orderBy: { year: "desc" }, take: 3 },
         },
         orderBy: { createdAt: "desc" },
         skip,

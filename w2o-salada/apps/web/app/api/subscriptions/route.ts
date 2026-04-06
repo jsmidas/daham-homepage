@@ -13,6 +13,10 @@ export async function GET() {
       where: { userId },
       include: {
         items: { include: { product: true } },
+        periods: {
+          orderBy: { year: "desc" },
+          take: 5,
+        },
       },
       orderBy: { createdAt: "desc" },
     });

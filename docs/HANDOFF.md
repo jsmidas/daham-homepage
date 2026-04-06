@@ -5,6 +5,53 @@
 
 ---
 
+## 📅 2026-04-06 (일) 2차 작업
+
+### ✅ 완료
+
+**홈페이지 구조 개편 (구독 중심)**
+- 히어로/About/CTA/Footer 문구 및 링크 전면 수정
+- 구독 플랜 3종: 맛보기/정기구독/혼합신청
+- 가격 할인 표시 강화 (취소선 + 21% 배지)
+- 메뉴 소개 페이지 `/menu` 신규
+- 상세 페이지: 장바구니 → 구독 안내 용도로 전환
+
+**구독 시스템 전면 재설계 (Phase 1~4)**
+- DB: DeliveryCalendar, MenuAssignment, SubscriptionPeriod, SubscriptionSelection 추가
+- Subscription 확장: selectionMode(MANUAL/AUTO), itemsPerDelivery
+- 관리자 배송 캘린더 `/admin/delivery-calendar` — 월별 달력 배송일 지정 + 식단 배정
+- 관리자 구독 설정 `/admin/subscribe-settings` — 수량/가격/배송 조건
+- 관리자 구독 관리 `/admin/subscriptions` — 목록/필터/갱신예정
+- 고객 구독 신청 `/subscribe` — 3단계 (유형→수량→캘린더 메뉴선택)
+  - 직접 골라먹기 (MANUAL): 캘린더에서 날짜별 메뉴 자유 조합
+  - 잘 챙겨서 보내줘 (AUTO): 메뉴 선택 스킵, 회사 배정
+  - 맛보기: 1회 체험
+- 토스페이먼츠 결제: 맛보기(일반결제) + 구독(빌링키 자동결제)
+- 자동 재결제 Cron: renewal-notify(7일전 알림), renewal-charge(자동결제)
+- Vercel Cron 설정 (매일 06:00/09:00)
+- 마이페이지 구독 관리 UI 리뉴얼
+- 홈페이지 식단표 캘린더 데이터 연동
+
+**기타**
+- DB 비밀번호 복구 (로컬 + Vercel)
+- 관리자 페이지 RightDock 숨김
+- 설계 문서: docs/SUBSCRIPTION_DESIGN.md
+
+### 🎯 다음 작업
+
+1. **상품 사진 업로드** — 촬영 완료 후 관리자 페이지에서 등록
+2. **간편식 상품 등록** — 관리자에서 간편식 카테고리 상품 추가
+3. **배송 캘린더 설정** — 관리자에서 다음 달 배송일 + 식단 배정
+4. **카카오 비즈니스 심사 완료 후 알림톡 실연동**
+5. **토스 사업자 심사 완료 후 라이브 키 전환**
+6. **소스 선택 기능** (추후)
+7. **배송 관리 고도화** (추후)
+
+### ⚠️ Vercel 환경변수 추가 필요
+- `CRON_SECRET` — cron API 보호용 시크릿 키
+
+---
+
 ## 📅 2026-04-06 (일) 작업 마감
 
 ### ✅ 오늘 완료
