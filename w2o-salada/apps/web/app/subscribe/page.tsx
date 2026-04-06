@@ -30,9 +30,10 @@ export default function SubscribePage() {
 
 function SubscribeContent() {
   const searchParams = useSearchParams();
-  const initialPlan = searchParams.get("plan") === "trial" ? "trial" : "subscription";
+  const paramPlan = searchParams.get("plan");
+  const initialPlan = paramPlan === "trial" ? "trial" : paramPlan === "mixed" ? "mixed" : "subscription";
 
-  const [plan, setPlan] = useState<"trial" | "subscription">(initialPlan);
+  const [plan, setPlan] = useState<"trial" | "subscription" | "mixed">(initialPlan);
   const [products, setProducts] = useState<Product[]>([]);
   const [selection, setSelection] = useState<Selection>({});
   const [selectedDay, setSelectedDay] = useState(0);
@@ -57,7 +58,7 @@ function SubscribeContent() {
     });
   }, [products]);
 
-  // 맛보기: 1일만, 구독: 주 2회(화/목 기본)
+  // 맛보기: 1일만, 구독/혼합: 주 2회(화/목 기본)
   const deliveryDays = plan === "trial" ? [selectedDay] : [1, 3]; // 화, 목
 
   const toggleItem = (dayIdx: number, productId: string) => {
@@ -89,12 +90,12 @@ function SubscribeContent() {
       for (const id of items) {
         const product = productMap.get(id);
         if (product) {
-          total += plan === "subscription" ? product.price : (product.originalPrice || product.price);
+          total += plan === "trial" ? (product.originalPrice || product.price) : product.price;
         }
       }
     }
 
-    if (plan === "subscription") {
+    if (plan !== "trial") {
       return { perDelivery: total / Math.max(deliveryDays.length, 1), monthly: total * 4, total };
     }
     return { perDelivery: total, monthly: 0, total };
@@ -129,26 +130,23 @@ function SubscribeContent() {
 
         {/* 플랜 토글 */}
         <div className="flex gap-3 mb-8">
-          <button
-            onClick={() => setPlan("trial")}
-            className={`flex-1 py-3.5 rounded-xl font-semibold text-sm transition border ${
-              plan === "trial"
-                ? "bg-[#EF9F27] text-white border-[#EF9F27] shadow-md shadow-[#EF9F27]/20"
-                : "bg-white text-[#4a7a5e] border-[#1D9E75]/15 hover:border-[#EF9F27]/50"
-            }`}
-          >
-            맛보기 (1회)
-          </button>
-          <button
-            onClick={() => setPlan("subscription")}
-            className={`flex-1 py-3.5 rounded-xl font-semibold text-sm transition border ${
-              plan === "subscription"
-                ? "bg-[#1D9E75] text-white border-[#1D9E75] shadow-md shadow-[#1D9E75]/20"
-                : "bg-white text-[#4a7a5e] border-[#1D9E75]/15 hover:border-[#1D9E75]/50"
-            }`}
-          >
-            정기구독 (주 2회)
-          </button>
+          {([
+            { key: "trial" as const, label: "맛보기 (1회)", activeColor: "bg-[#EF9F27] border-[#EF9F27] shadow-[#EF9F27]/20" },
+            { key: "subscription" as const, label: "정기구독 (샐러드)", activeColor: "bg-[#1D9E75] border-[#1D9E75] shadow-[#1D9E75]/20" },
+            { key: "mixed" as const, label: "혼합신청", activeColor: "bg-[#EF9F27] border-[#EF9F27] shadow-[#EF9F27]/20" },
+          ]).map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPlan(p.key)}
+              className={`flex-1 py-3.5 rounded-xl font-semibold text-sm transition border ${
+                plan === p.key
+                  ? `${p.activeColor} text-white shadow-md`
+                  : "bg-white text-[#4a7a5e] border-[#1D9E75]/15 hover:border-[#1D9E75]/50"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -246,8 +244,8 @@ function SubscribeContent() {
                             {item.originalPrice && item.originalPrice > item.price && (
                               <span className="text-gray-400 text-xs line-through">{item.originalPrice.toLocaleString()}원</span>
                             )}
-                            <span className={`font-bold text-sm ${plan === "subscription" ? "text-[#1D9E75]" : "text-[#4a7a5e]"}`}>
-                              {plan === "subscription"
+                            <span className={`font-bold text-sm ${plan !== "trial" ? "text-[#1D9E75]" : "text-[#4a7a5e]"}`}>
+                              {plan !== "trial"
                                 ? `${item.price.toLocaleString()}원`
                                 : `${(item.originalPrice || item.price).toLocaleString()}원`}
                             </span>
@@ -271,12 +269,14 @@ function SubscribeContent() {
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                   plan === "subscription"
                     ? "bg-[#1D9E75]/10 text-[#1D9E75]"
+                    : plan === "mixed"
+                    ? "bg-[#EF9F27]/10 text-[#EF9F27]"
                     : "bg-[#EF9F27]/10 text-[#EF9F27]"
                 }`}>
-                  {plan === "subscription" ? "정기구독" : "맛보기"}
+                  {plan === "subscription" ? "정기구독" : plan === "mixed" ? "혼합신청" : "맛보기"}
                 </span>
                 <span className="text-[#7aaa90] text-xs">
-                  {plan === "subscription" ? "주 2회 · 월 결제" : "1회 체험"}
+                  {plan === "trial" ? "1회 체험" : "주 2회 · 월 결제"}
                 </span>
               </div>
 
@@ -298,11 +298,11 @@ function SubscribeContent() {
                               <div key={id} className="flex justify-between items-center text-sm">
                                 <span className="text-[#0A1A0F] truncate flex-1 mr-2">{p.name}</span>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                  {p.originalPrice && p.originalPrice > p.price && plan === "subscription" && (
+                                  {p.originalPrice && p.originalPrice > p.price && plan !== "trial" && (
                                     <span className="text-gray-400 text-[10px] line-through">{p.originalPrice.toLocaleString()}</span>
                                   )}
                                   <span className="text-[#1D9E75] font-semibold text-xs">
-                                    {plan === "subscription"
+                                    {plan !== "trial"
                                       ? `${p.price.toLocaleString()}원`
                                       : `${(p.originalPrice || p.price).toLocaleString()}원`}
                                   </span>
@@ -319,7 +319,7 @@ function SubscribeContent() {
 
               {/* 금액 */}
               <div className="border-t border-[#1D9E75]/10 pt-4 space-y-2">
-                {plan === "subscription" ? (
+                {plan !== "trial" ? (
                   <>
                     <div className="flex justify-between text-sm">
                       <span className="text-[#7aaa90]">1회 배송</span>
@@ -365,11 +365,13 @@ function SubscribeContent() {
                   ? `메뉴를 선택해주세요 (최소 2개)`
                   : plan === "subscription"
                   ? "구독 결제하기"
+                  : plan === "mixed"
+                  ? "혼합 결제하기"
                   : "맛보기 결제하기"
                 }
               </button>
 
-              {plan === "subscription" && (
+              {plan !== "trial" && (
                 <p className="text-[#7aaa90] text-[10px] text-center mt-3">
                   언제든 일시정지·해지 가능 | 매월 자동 결제
                 </p>
