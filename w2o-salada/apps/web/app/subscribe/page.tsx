@@ -554,13 +554,13 @@ function SubscribeContent() {
                       ))}
                     </div>
                     {/* 요일 헤더 — 일/월/금/토 좁게, 화~목 넓게 */}
-                    <div className="grid bg-gray-50 border-b border-gray-100" style={{ gridTemplateColumns: "1fr 1fr 2fr 1.5fr 2fr 1fr 1fr" }}>
+                    <div className="grid bg-gray-50 border-b border-gray-100" style={{ gridTemplateColumns: "0.7fr 0.7fr 2fr 1.5fr 2fr 2fr 0.7fr" }}>
                       {WEEKDAYS.map((d, i) => (
                         <div key={d} className={`text-center py-1.5 text-[10px] font-semibold ${i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-gray-400"}`}>{d}</div>
                       ))}
                     </div>
                     {/* 날짜 그리드 */}
-                    <div className="grid" style={{ gridTemplateColumns: "1fr 1fr 2fr 1.5fr 2fr 1fr 1fr" }}>
+                    <div className="grid" style={{ gridTemplateColumns: "0.7fr 0.7fr 2fr 1.5fr 2fr 2fr 0.7fr" }}>
                       {grid.map((day, i) => {
                         if (day === null) return <div key={i} className="min-h-[3rem] border-b border-r border-gray-50" />;
                         const dateStr = getDateStr(mY, mM, day);
@@ -574,7 +574,7 @@ function SubscribeContent() {
                         const incomplete = isDelivery && count > 0 && !done;
                         const empty = isDelivery && count === 0 && mode !== "auto";
                         const dayOfWeek = new Date(mY, mM - 1, day).getDay();
-                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 || dayOfWeek === 1 || dayOfWeek === 5;
+                        const isNarrowDay = dayOfWeek === 0 || dayOfWeek === 6 || dayOfWeek === 1;
 
                         return (
                           <div
@@ -601,7 +601,7 @@ function SubscribeContent() {
                             </span>
                             {isClosed && <div className="text-[8px] text-gray-400">마감</div>}
                             {isSkipped && !isClosed && <div className="text-[8px] text-gray-400 line-through">건너뜀</div>}
-                            {isDelivery && !isClosed && !isWeekend && (
+                            {isDelivery && !isClosed && !isNarrowDay && (
                               <div>
                                 {mode === "auto" ? (
                                   <span className="w-4 h-4 bg-[#EF9F27] rounded-full inline-flex items-center justify-center">
