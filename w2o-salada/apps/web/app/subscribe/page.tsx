@@ -60,6 +60,9 @@ function SubscribeContent() {
   // 약관 동의
   const [termsAgreed, setTermsAgreed] = useState(false);
 
+  // AUTO 모드 배송 횟수 (8~12회 조절 가능)
+  const [autoCount, setAutoCount] = useState(8);
+
   // Step 3: 캘린더 메뉴 선택
   const [calendar, setCalendar] = useState<CalendarDay[]>([]);
   const [selection, setSelection] = useState<Selection>({});
@@ -135,11 +138,11 @@ function SubscribeContent() {
   // 최소 주문 조건: 구독/혼합은 8회 이상
   const MIN_DELIVERIES = 8;
 
-  // 맛보기: 첫 배송일만, AUTO: 앞에서 8회, MANUAL: 건너뛰지 않은 배송일
+  // 맛보기: 첫 배송일만, AUTO: 건너뛴 날짜 제외 후 autoCount회, MANUAL: 건너뛰지 않은 배송일
   const activeDates = mode === "trial"
     ? deliveryDates.slice(0, 1)
     : mode === "auto"
-    ? deliveryDates.slice(0, MIN_DELIVERIES)
+    ? deliveryDates.filter((d) => !skippedDates.has(d.dateStr)).slice(0, autoCount)
     : deliveryDates.filter((d) => !skippedDates.has(d.dateStr));
 
   // 달력 그리드 (2개월)
@@ -482,13 +485,25 @@ function SubscribeContent() {
 
                 {/* 알아서 배송 추천 버튼 / 상태 표시 */}
                 {mode === "auto" ? (
-                  <div className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-[#EF9F27]/10 text-[#EF9F27] rounded-full text-xs font-bold">
+                  <div className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#EF9F27]/10 text-[#EF9F27] rounded-full text-xs font-bold">
                     <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                    잘 챙겨서 보내줘로 주문됨
+                    <span>잘 챙겨서 보내줘</span>
+                    {/* 배송 횟수 조절 */}
                     <button
-                      onClick={() => setMode("manual")}
-                      className="ml-2 text-[10px] text-gray-400 hover:text-gray-600 underline"
-                    >직접 선택으로 변경</button>
+                      onClick={() => setAutoCount(Math.max(MIN_DELIVERIES, autoCount - 1))}
+                      disabled={autoCount <= MIN_DELIVERIES}
+                      className="w-5 h-5 rounded-full border border-[#EF9F27]/40 flex items-center justify-center text-[10px] disabled:opacity-30"
+                    >−</button>
+                    <span className="font-black">{autoCount}회</span>
+                    <button
+                      onClick={() => setAutoCount(Math.min(MAX_DELIVERIES, autoCount + 1))}
+                      disabled={autoCount >= MAX_DELIVERIES}
+                      className="w-5 h-5 rounded-full border border-[#EF9F27]/40 flex items-center justify-center text-[10px] disabled:opacity-30"
+                    >+</button>
+                    <button
+                      onClick={() => { setMode("manual"); setTermsAgreed(false); }}
+                      className="ml-1 text-[10px] text-gray-400 hover:text-gray-600 underline"
+                    >직접 선택</button>
                   </div>
                 ) : mode !== "trial" ? (
                   <button
@@ -547,6 +562,11 @@ function SubscribeContent() {
                             key={i}
                             onClick={() => {
                               if (isClosed) return;
+                              if (mode === "auto" && isAllDelivery) {
+                                // AUTO: 클릭으로 건너뛰기/복원 토글
+                                toggleSkip(dateStr);
+                                return;
+                              }
                               if (isAllDelivery && mode !== "trial") {
                                 if (isSkipped) { toggleSkip(dateStr); }
                                 setSelectedDate(dateStr);
@@ -623,9 +643,15 @@ function SubscribeContent() {
                   <span className="material-symbols-outlined text-[#EF9F27] text-4xl mb-3 block">auto_awesome</span>
                   <h3 className="text-lg font-bold text-[#0A1A0F] mb-2">메뉴 선택이 필요 없어요!</h3>
                   <p className="text-[#4a7a5e] text-sm">
-                    매 배송일마다 저희가 엄선한 {itemsPerDelivery}개의 메뉴를 보내드립니다.<br/>
-                    배송일은 위 캘린더에서 확인하실 수 있습니다.
+                    매 배송일마다 저희가 엄선한 {itemsPerDelivery}개의 메뉴를 보내드립니다.
                   </p>
+                  <div className="mt-4 pt-4 border-t border-[#EF9F27]/10 text-xs text-[#7aaa90] space-y-1">
+                    <p>캘린더에서 <strong>날짜를 클릭</strong>하면 해당 회차를 건너뛸 수 있습니다.</p>
+                    <p>상단 <strong>+/−</strong> 버튼으로 8회~12회까지 배송 횟수를 조절할 수 있습니다.</p>
+                    {skippedDates.size > 0 && (
+                      <p className="text-[#EF9F27] font-medium mt-2">현재 {skippedDates.size}회 건너뜀</p>
+                    )}
+                  </div>
                 </div>
               ) : selectedDate && deliveryDateSet.has(selectedDate) ? (
                 <div>
