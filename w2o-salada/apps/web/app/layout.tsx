@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers";
 import RightDock from "./components/RightDock";
+import MobileInstallBanner from "./components/MobileInstallBanner";
 
 export const metadata: Metadata = {
   title: "W2O SALADA - 일어나면 이미 준비된 하루",
@@ -44,6 +45,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <RightDock />
+          <MobileInstallBanner />
         </Providers>
       </body>
     </html>

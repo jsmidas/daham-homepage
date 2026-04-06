@@ -69,3 +69,13 @@ body {
   75% { transform: scale(1.1) rotate(-2deg); }
   100% { transform: scale(1) rotate(0deg); }
 }
+
+/* 모바일 설치 배너 슬라이드업 */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
