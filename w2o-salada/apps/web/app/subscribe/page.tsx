@@ -42,8 +42,9 @@ function SubscribeContent() {
   const { data: session } = useSession();
   const paramPlan = searchParams.get("plan");
 
-  // Step 관리
-  const [step, setStep] = useState(1);
+  // plan 파라미터가 있으면 Step 1 건너뛰고 바로 수량·메뉴 선택
+  const hasValidPlan = paramPlan === "trial" || paramPlan === "auto" || paramPlan === "subscription" || paramPlan === "mixed" || paramPlan === "manual";
+  const [step, setStep] = useState(hasValidPlan ? 3 : 1);
 
   // Step 1: 구독 유형
   const [mode, setMode] = useState<"manual" | "auto" | "trial">(
