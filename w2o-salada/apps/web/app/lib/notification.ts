@@ -20,6 +20,10 @@ export const TEMPLATE = {
   DELIVERY_DONE: "DELIVERY_DONE",
   SUB_PAID: "SUB_PAID",
   PAYMENT_FAIL: "PAYMENT_FAIL",
+  SUB_RENEWAL_NOTICE: "SUB_RENEWAL_NOTICE",
+  SUB_RENEWED: "SUB_RENEWED",
+  SUB_RENEWAL_FAILED: "SUB_RENEWAL_FAILED",
+  SUB_SELECT_MENU: "SUB_SELECT_MENU",
 } as const;
 
 export type TemplateCode = (typeof TEMPLATE)[keyof typeof TEMPLATE];
@@ -36,6 +40,14 @@ export const TEMPLATE_PREVIEW: Record<TemplateCode, string> = {
     "[W2O SALADA]\n정기구독 결제가 완료되었습니다.\n금액: #{금액}원",
   PAYMENT_FAIL:
     "[W2O SALADA]\n결제에 실패했습니다.\n카드 정보를 확인해주세요.",
+  SUB_RENEWAL_NOTICE:
+    "[W2O SALADA]\n#{고객명}님, 1주일 후 구독이 자동 갱신됩니다.\n금액: #{금액}원\n변경/해지: w2o.co.kr/mypage/subscription",
+  SUB_RENEWED:
+    "[W2O SALADA]\n#{고객명}님, 구독이 자동 갱신되었습니다.\n금액: #{금액}원\n다음 배송을 준비합니다.",
+  SUB_RENEWAL_FAILED:
+    "[W2O SALADA]\n#{고객명}님, 구독 갱신 결제에 실패했습니다.\n카드 정보를 확인해주세요.\n확인: w2o.co.kr/mypage/subscription",
+  SUB_SELECT_MENU:
+    "[W2O SALADA]\n#{고객명}님, #{월}월 메뉴를 선택해주세요.\n선택: w2o.co.kr/subscribe",
 };
 
 // 솔라피 템플릿 ID 매핑 (승인 후 환경변수나 DB에서 읽어오도록 교체 가능)
