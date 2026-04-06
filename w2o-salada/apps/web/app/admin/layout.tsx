@@ -1,38 +1,17 @@
-"use client";
-
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { auth } from "../../auth";
+import { redirect } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import AdminHeader from "./components/AdminHeader";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const session = await auth();
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/login");
-    }
-    if (status === "authenticated" && session?.user?.role !== "ADMIN") {
-      router.replace("/login");
-    }
-  }, [status, session, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="w-8 h-8 border-3 border-[#1D9E75] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!session || session.user?.role !== "ADMIN") {
-    return null;
+  if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
+    redirect("/login");
   }
 
   return (

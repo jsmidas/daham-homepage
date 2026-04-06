@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "../../lib/fetcher";
 import ProductModal from "./ProductModal";
 
 type Product = {
@@ -27,22 +29,12 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const { data, isLoading: loading, mutate } = useSWR<Product[]>("/api/admin/products", fetcher, { revalidateOnFocus: false });
+  const products = Array.isArray(data) ? data : [];
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/products");
-    const data = await res.json();
-    setProducts(data);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchProducts(); }, []);
 
   const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -53,7 +45,7 @@ export default function ProductsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
     await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
-    fetchProducts();
+    mutate();
   };
 
   const handleEdit = (product: Product) => {
@@ -201,7 +193,7 @@ export default function ProductsPage() {
         <ProductModal
           product={editProduct}
           onClose={() => setModalOpen(false)}
-          onSaved={() => { setModalOpen(false); fetchProducts(); }}
+          onSaved={() => { setModalOpen(false); mutate(); }}
         />
       )}
     </div>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "../../lib/fetcher";
 
 type OrderItem = {
   id: string;
@@ -50,22 +52,10 @@ const nextStatus: Record<string, string> = {
 };
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
-
-  const fetchOrders = () => {
-    const params = filter !== "all" ? `?status=${filter}` : "";
-    fetch(`/api/admin/orders${params}`)
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => {
-        setOrders(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  };
-
-  useEffect(() => { fetchOrders(); }, [filter]);
+  const apiUrl = filter !== "all" ? `/api/admin/orders?status=${filter}` : "/api/admin/orders";
+  const { data, isLoading: loading, mutate } = useSWR<Order[]>(apiUrl, fetcher, { revalidateOnFocus: false });
+  const orders = Array.isArray(data) ? data : [];
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     await fetch(`/api/admin/orders/${orderId}`, {
@@ -73,7 +63,7 @@ export default function OrdersPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     });
-    fetchOrders();
+    mutate();
   };
 
   const todayCount = orders.filter((o) => {
@@ -97,7 +87,7 @@ export default function OrdersPage() {
         {statusFilter.map((s) => (
           <button
             key={s}
-            onClick={() => { setFilter(s); setLoading(true); }}
+            onClick={() => setFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
               filter === s
                 ? "bg-[#1D9E75] text-white"

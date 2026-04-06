@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "../../lib/fetcher";
 
 type Notification = {
   id: string;
@@ -40,12 +42,18 @@ const templateLabels: Record<string, string> = {
 };
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [mode, setMode] = useState<"mock" | "live">("mock");
-  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("");
   const [filterTemplate, setFilterTemplate] = useState("");
+
+  const params = new URLSearchParams();
+  if (filterStatus) params.set("status", filterStatus);
+  if (filterTemplate) params.set("templateCode", filterTemplate);
+  const apiUrl = `/api/admin/notifications?${params.toString()}`;
+
+  const { data, isLoading: loading, mutate } = useSWR(apiUrl, fetcher, { revalidateOnFocus: false });
+  const notifications: Notification[] = data?.notifications ?? [];
+  const templates: Template[] = data?.templates ?? [];
+  const mode: "mock" | "live" = data?.mode ?? "mock";
 
   // 테스트 발송 폼
   const [showTestForm, setShowTestForm] = useState(false);
@@ -56,25 +64,6 @@ export default function NotificationsPage() {
     주문번호: "W2O-TEST-0001",
   });
   const [sending, setSending] = useState(false);
-
-  const loadData = useCallback(() => {
-    const params = new URLSearchParams();
-    if (filterStatus) params.set("status", filterStatus);
-    if (filterTemplate) params.set("templateCode", filterTemplate);
-    fetch(`/api/admin/notifications?${params.toString()}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setNotifications(data.notifications ?? []);
-        setTemplates(data.templates ?? []);
-        setMode(data.mode ?? "mock");
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [filterStatus, filterTemplate]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // 템플릿별 필요 변수 추출
   const requiredVars = (() => {
@@ -112,7 +101,7 @@ export default function NotificationsPage() {
           : "알림톡이 발송되었습니다.",
       );
       setShowTestForm(false);
-      loadData();
+      mutate();
     } finally {
       setSending(false);
     }

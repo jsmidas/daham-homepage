@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import useSWR from "swr";
+import { fetcher } from "../../lib/fetcher";
 
 type Product = {
   id: string;
@@ -32,7 +34,6 @@ export default function DeliveryCalendarPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [calendars, setCalendars] = useState<CalendarEntry[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -75,12 +76,8 @@ export default function DeliveryCalendarPage() {
       .catch(() => setCalendars([]));
   }, [year, month]);
 
-  useEffect(() => {
-    fetch("/api/admin/products")
-      .then((r) => r.json())
-      .then((data) => setProducts(Array.isArray(data) ? data : []))
-      .catch(() => setProducts([]));
-  }, []);
+  const { data: productsData } = useSWR<Product[]>("/api/admin/products", fetcher, { revalidateOnFocus: false });
+  const products = Array.isArray(productsData) ? productsData : [];
 
   // 월의 날짜 그리드 생성
   const calendarGrid = useMemo(() => {

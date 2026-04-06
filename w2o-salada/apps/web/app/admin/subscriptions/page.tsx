@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "../../lib/fetcher";
 
 type SubUser = { id: string; name: string; email: string; phone: string | null };
 type SubPeriod = { id: string; year: number; month: number; status: string; totalAmount: number; paidAt: string | null };
@@ -26,31 +28,22 @@ const statusColors: Record<string, string> = {
 const modeLabels: Record<string, string> = { MANUAL: "직접선택", AUTO: "위임형" };
 
 export default function AdminSubscriptionsPage() {
-  const [subs, setSubs] = useState<Sub[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: "", mode: "", search: "" });
   const [page, setPage] = useState(1);
 
-  const fetchSubs = async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (filter.status) params.set("status", filter.status);
-    if (filter.mode) params.set("plan", filter.mode);
-    if (filter.search) params.set("search", filter.search);
-    params.set("page", String(page));
-    params.set("limit", "20");
+  const params = new URLSearchParams();
+  if (filter.status) params.set("status", filter.status);
+  if (filter.mode) params.set("plan", filter.mode);
+  if (filter.search) params.set("search", filter.search);
+  params.set("page", String(page));
+  params.set("limit", "20");
+  const apiUrl = `/api/admin/subscriptions?${params}`;
 
-    const res = await fetch(`/api/admin/subscriptions?${params}`);
-    const data = await res.json();
-    setSubs(data.subscriptions || []);
-    setTotal(data.pagination?.total || 0);
-    setLoading(false);
-  };
+  const { data, isLoading: loading } = useSWR(apiUrl, fetcher, { revalidateOnFocus: false });
+  const subs: Sub[] = data?.subscriptions || [];
+  const total: number = data?.pagination?.total || 0;
 
-  useEffect(() => { fetchSubs(); }, [filter.status, filter.mode, page]);
-
-  const handleSearch = () => { setPage(1); fetchSubs(); };
+  const handleSearch = () => { setPage(1); };
 
   // 갱신 예정 수
   const renewalCount = subs.filter((s) => {

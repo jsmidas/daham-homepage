@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import useSWR from "swr";
+import { fetcher } from "../../lib/fetcher";
 
 type Stats = {
   todayOrders: number;
@@ -49,20 +50,10 @@ const quickActions = [
 ];
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/admin/stats/overview").then((r) => r.ok ? r.json() : null),
-      fetch("/api/admin/orders?limit=5").then((r) => r.ok ? r.json() : []),
-    ]).then(([statsData, ordersData]) => {
-      if (statsData) setStats(statsData);
-      if (Array.isArray(ordersData)) setRecentOrders(ordersData);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  const { data: stats } = useSWR<Stats>("/api/admin/stats/overview", fetcher, { revalidateOnFocus: false });
+  const { data: ordersData } = useSWR<RecentOrder[]>("/api/admin/orders?limit=5", fetcher, { revalidateOnFocus: false });
+  const recentOrders = Array.isArray(ordersData) ? ordersData : [];
+  const loading = !stats;
 
   const statCards = [
     { label: "오늘 주문", value: stats ? `${stats.todayOrders}건` : "-", sub: stats ? `${stats.todayRevenue.toLocaleString()}원` : "", icon: "receipt_long", color: "bg-blue-500" },

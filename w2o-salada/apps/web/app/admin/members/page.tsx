@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetcher } from "../../lib/fetcher";
 
 type Member = {
   id: string;
@@ -13,15 +15,9 @@ type Member = {
 };
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const { data, isLoading: loading } = useSWR<Member[]>("/api/admin/members", fetcher, { revalidateOnFocus: false });
+  const members = Array.isArray(data) ? data : [];
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/admin/members")
-      .then((r) => r.json())
-      .then((data) => { setMembers(data); setLoading(false); });
-  }, []);
 
   const filtered = members.filter((m) =>
     m.name.includes(search) || m.email.includes(search)
