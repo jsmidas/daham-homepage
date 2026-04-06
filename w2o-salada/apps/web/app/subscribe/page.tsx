@@ -63,6 +63,9 @@ function SubscribeContent() {
   // AUTO 모드 배송 횟수 (8~12회 조절 가능)
   const [autoCount, setAutoCount] = useState(8);
 
+  // 캘린더 월 탭
+  const [calTab, setCalTab] = useState(0);
+
   // Step 3: 캘린더 메뉴 선택
   const [calendar, setCalendar] = useState<CalendarDay[]>([]);
   const [selection, setSelection] = useState<Selection>({});
@@ -530,21 +533,36 @@ function SubscribeContent() {
                 </div>
               )}
 
-              {/* 미니 캘린더 (2개월) */}
-              <div className="space-y-4 mb-6">
-                {months.map(({ year: mY, month: mM, grid }) => (
-                  <div key={`${mY}-${mM}`} className="bg-white rounded-2xl border border-[#1D9E75]/10 overflow-hidden">
-                    <div className="px-4 py-2 bg-[#f7fdf9] border-b border-[#1D9E75]/10">
-                      <span className="text-sm font-bold text-[#0A1A0F]">{mY}년 {mM}월</span>
+              {/* 월 탭 캘린더 */}
+              {(() => {
+                const m = months[calTab] ?? months[0];
+                if (!m) return null;
+                const { year: mY, month: mM, grid } = m;
+                // 비대칭 그리드: 일(1fr) 월(1fr) 화(2fr) 수(2fr) 목(2fr) 금(1fr) 토(1fr)
+                return (
+                  <div className="bg-white rounded-2xl border border-[#1D9E75]/10 overflow-hidden mb-4">
+                    {/* 월 탭 */}
+                    <div className="flex border-b border-[#1D9E75]/10">
+                      {months.map((mo, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCalTab(idx)}
+                          className={`flex-1 py-2.5 text-sm font-bold text-center transition ${
+                            calTab === idx ? "bg-[#1D9E75] text-white" : "bg-[#f7fdf9] text-gray-500 hover:bg-[#e8f5ee]"
+                          }`}
+                        >{mo.month}월</button>
+                      ))}
                     </div>
-                    <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
+                    {/* 요일 헤더 — 일/월/금/토 좁게, 화~목 넓게 */}
+                    <div className="grid bg-gray-50 border-b border-gray-100" style={{ gridTemplateColumns: "1fr 1fr 2fr 1.5fr 2fr 1fr 1fr" }}>
                       {WEEKDAYS.map((d, i) => (
                         <div key={d} className={`text-center py-1.5 text-[10px] font-semibold ${i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-gray-400"}`}>{d}</div>
                       ))}
                     </div>
-                    <div className="grid grid-cols-7">
+                    {/* 날짜 그리드 */}
+                    <div className="grid" style={{ gridTemplateColumns: "1fr 1fr 2fr 1.5fr 2fr 1fr 1fr" }}>
                       {grid.map((day, i) => {
-                        if (day === null) return <div key={i} className="min-h-[3.5rem] border-b border-r border-gray-50" />;
+                        if (day === null) return <div key={i} className="min-h-[3rem] border-b border-r border-gray-50" />;
                         const dateStr = getDateStr(mY, mM, day);
                         const isAllDelivery = allDeliveryDateSet.has(dateStr);
                         const isClosed = isAllDelivery && dateStr < cutoffDate;
@@ -556,54 +574,39 @@ function SubscribeContent() {
                         const incomplete = isDelivery && count > 0 && !done;
                         const empty = isDelivery && count === 0 && mode !== "auto";
                         const dayOfWeek = new Date(mY, mM - 1, day).getDay();
+                        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 || dayOfWeek === 1 || dayOfWeek === 5;
 
                         return (
                           <div
                             key={i}
                             onClick={() => {
                               if (isClosed) return;
-                              if (mode === "auto" && isAllDelivery) {
-                                // AUTO: 클릭으로 건너뛰기/복원 토글
-                                toggleSkip(dateStr);
-                                return;
-                              }
+                              if (mode === "auto" && isAllDelivery) { toggleSkip(dateStr); return; }
                               if (isAllDelivery && mode !== "trial") {
                                 if (isSkipped) { toggleSkip(dateStr); }
                                 setSelectedDate(dateStr);
-                              } else if (isDelivery) {
-                                setSelectedDate(dateStr);
-                              }
+                              } else if (isDelivery) { setSelectedDate(dateStr); }
                             }}
-                            className={`min-h-[3.5rem] border-b border-r border-gray-50 p-1 text-center transition cursor-pointer ${
+                            className={`min-h-[3rem] border-b border-r border-gray-50 p-0.5 text-center transition cursor-pointer ${
                               isClosed ? "bg-gray-50 cursor-not-allowed"
-                                : isSkipped ? "bg-gray-50/80 cursor-pointer"
+                                : isSkipped ? "bg-gray-50/80"
                                 : isSelected ? "bg-[#1D9E75]/10 ring-2 ring-[#1D9E75] ring-inset"
                                 : incomplete ? "bg-red-50/60 ring-1 ring-red-300 ring-inset"
                                 : empty ? "bg-amber-50/40"
                                 : isDelivery ? "hover:bg-[#f0faf4]" : ""
                             } ${!isAllDelivery ? "cursor-default" : ""}`}
                           >
-                            <span className={`text-xs ${dayOfWeek === 0 ? "text-red-400" : dayOfWeek === 6 ? "text-blue-400" : "text-gray-600"} ${!isAllDelivery ? "opacity-30" : isClosed ? "opacity-40" : "font-medium"}`}>
+                            <span className={`text-xs ${dayOfWeek === 0 ? "text-red-400" : dayOfWeek === 6 ? "text-blue-400" : "text-gray-600"} ${!isAllDelivery ? "opacity-20" : isClosed ? "opacity-40" : "font-medium"}`}>
                               {day}
                             </span>
-                            {isClosed && (
-                              <div className="mt-0.5">
-                                <span className="text-[8px] text-gray-400">마감</span>
-                              </div>
-                            )}
-                            {isSkipped && !isClosed && (
-                              <div className="mt-0.5">
-                                <span className="text-[8px] text-gray-400 line-through">건너뜀</span>
-                              </div>
-                            )}
-                            {isDelivery && !isClosed && (
-                              <div className="mt-0.5">
+                            {isClosed && <div className="text-[8px] text-gray-400">마감</div>}
+                            {isSkipped && !isClosed && <div className="text-[8px] text-gray-400 line-through">건너뜀</div>}
+                            {isDelivery && !isClosed && !isWeekend && (
+                              <div>
                                 {mode === "auto" ? (
-                                  <div className="space-y-px">
-                                    {getMenuForDate(dateStr).slice(0, itemsPerDelivery).map((m) => (
-                                      <p key={m.productId} className="text-[7px] leading-tight truncate text-[#EF9F27] font-medium">{m.product.name}</p>
-                                    ))}
-                                  </div>
+                                  <span className="w-4 h-4 bg-[#EF9F27] rounded-full inline-flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-white text-[9px]">check</span>
+                                  </span>
                                 ) : done ? (
                                   <span className="w-4 h-4 bg-[#1D9E75] rounded-full inline-flex items-center justify-center">
                                     <span className="material-symbols-outlined text-white text-[9px]">check</span>
@@ -620,12 +623,12 @@ function SubscribeContent() {
                       })}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })()}
 
               {/* 진행 바 */}
               {mode !== "auto" && (
-                <div className="mb-6">
+                <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-[#4a7a5e]">메뉴 선택 진행</span>
                     <span className="text-sm font-semibold text-[#1D9E75]">{completedCount}/{activeDates.length}회 완료</span>
@@ -637,21 +640,33 @@ function SubscribeContent() {
                 </div>
               )}
 
-              {/* 선택한 날짜의 메뉴 */}
+              {/* AUTO: 배송 리스트 */}
               {mode === "auto" ? (
-                <div className="bg-white rounded-2xl border border-[#EF9F27]/15 p-6 text-center">
-                  <span className="material-symbols-outlined text-[#EF9F27] text-4xl mb-3 block">auto_awesome</span>
-                  <h3 className="text-lg font-bold text-[#0A1A0F] mb-2">메뉴 선택이 필요 없어요!</h3>
-                  <p className="text-[#4a7a5e] text-sm">
-                    매 배송일마다 저희가 엄선한 {itemsPerDelivery}개의 메뉴를 보내드립니다.
-                  </p>
-                  <div className="mt-4 pt-4 border-t border-[#EF9F27]/10 text-xs text-[#7aaa90] space-y-1">
-                    <p>캘린더에서 <strong>날짜를 클릭</strong>하면 해당 회차를 건너뛸 수 있습니다.</p>
-                    <p>상단 <strong>+/−</strong> 버튼으로 8회~12회까지 배송 횟수를 조절할 수 있습니다.</p>
-                    {skippedDates.size > 0 && (
-                      <p className="text-[#EF9F27] font-medium mt-2">현재 {skippedDates.size}회 건너뜀</p>
-                    )}
-                  </div>
+                <div className="space-y-2 mb-4">
+                  <p className="text-xs text-[#7aaa90] mb-2">날짜를 탭하면 건너뛸 수 있습니다</p>
+                  {activeDates.map((d) => {
+                    const menus = getMenuForDate(d.dateStr).slice(0, itemsPerDelivery);
+                    const dateObj = new Date(d.dateStr + "T00:00:00");
+                    return (
+                      <div key={d.dateStr} className="flex items-center gap-3 bg-white rounded-xl border border-[#EF9F27]/10 px-4 py-3">
+                        <div className="shrink-0 text-center">
+                          <p className="text-xs text-[#EF9F27] font-bold">{dateObj.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })}</p>
+                          <p className="text-[10px] text-gray-400">{dateObj.toLocaleDateString("ko-KR", { weekday: "short" })}</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          {menus.length > 0 ? menus.map((m) => (
+                            <p key={m.productId} className="text-sm text-[#0A1A0F] truncate">{m.product.name}</p>
+                          )) : (
+                            <p className="text-xs text-gray-400">메뉴 미배정</p>
+                          )}
+                        </div>
+                        <span className="material-symbols-outlined text-[#EF9F27] text-lg">check_circle</span>
+                      </div>
+                    );
+                  })}
+                  {skippedDates.size > 0 && (
+                    <p className="text-xs text-gray-400 text-center mt-2">{skippedDates.size}회 건너뜀</p>
+                  )}
                 </div>
               ) : selectedDate && deliveryDateSet.has(selectedDate) ? (
                 <div>
