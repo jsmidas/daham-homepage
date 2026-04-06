@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 type Product = {
@@ -37,6 +38,8 @@ export default function SubscribePage() {
 
 function SubscribeContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: session } = useSession();
   const paramPlan = searchParams.get("plan");
   const initialPlan = paramPlan === "trial" ? "trial" : paramPlan === "mixed" ? "mixed" : "subscription";
 
@@ -45,6 +48,7 @@ function SubscribeContent() {
   const [selection, setSelection] = useState<Selection>({});
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [selectedDay, setSelectedDay] = useState(1); // 화요일 기본
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     fetch("/api/products")
@@ -130,6 +134,91 @@ function SubscribeContent() {
   // 전체 배송일 선택 완료 확인
   const allDeliveriesReady = allDeliveryKeys.every((k) => getSelectedCount(k) >= 2);
   const completedCount = allDeliveryKeys.filter((k) => getSelectedCount(k) >= 2).length;
+
+  // 결제 처리
+  const handlePayment = async () => {
+    if (!allDeliveriesReady) return;
+
+    // 로그인 확인
+    if (!session?.user) {
+      router.push(`/login?redirect=/subscribe?plan=${plan}`);
+      return;
+    }
+
+    setPaying(true);
+
+    try {
+      // 선택한 메뉴 정리
+      const selections = allDeliveryKeys.map((key) => {
+        const [week, day] = key.split("-");
+        return {
+          week: parseInt(week!) + 1,
+          day: parseInt(day!) === 1 ? "tue" : "thu",
+          productIds: selection[key] || [],
+        };
+      }).filter((s) => s.productIds.length > 0);
+
+      // 주문 생성
+      const orderRes = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, selections }),
+      });
+
+      if (!orderRes.ok) {
+        const err = await orderRes.json();
+        alert(err.error || "주문 생성에 실패했습니다.");
+        setPaying(false);
+        return;
+      }
+
+      const order = await orderRes.json();
+
+      // 토스 결제 요청
+      const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+      if (!TOSS_CLIENT_KEY) {
+        alert("결제 키가 설정되지 않았습니다.");
+        setPaying(false);
+        return;
+      }
+
+      const { loadTossPayments } = await import("@tosspayments/tosspayments-sdk");
+      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const userId = (session.user as { id?: string }).id ?? "guest";
+      const payment = tossPayments.payment({ customerKey: userId });
+
+      const orderName = plan === "trial"
+        ? "W2O 맛보기 (1회)"
+        : plan === "subscription"
+        ? "W2O 정기구독 (월)"
+        : "W2O 혼합신청 (월)";
+
+      if (plan === "trial") {
+        // 맛보기: 일반결제
+        await payment.requestPayment({
+          method: "CARD",
+          amount: { value: order.totalAmount, currency: "KRW" },
+          orderId: order.orderNo,
+          orderName,
+          customerName: session.user?.name || "고객",
+          successUrl: `${window.location.origin}/checkout/success?orderId=${order.orderId}`,
+          failUrl: `${window.location.origin}/checkout/fail?orderId=${order.orderId}`,
+        });
+      } else {
+        // 구독/혼합: 빌링키 발급 (자동결제)
+        const billing = tossPayments.billing({ customerKey: userId });
+        await billing.requestBillingKeyAuth({
+          method: "CARD",
+          successUrl: `${window.location.origin}/checkout/success?orderId=${order.orderId}&billing=true&amount=${order.totalAmount}&orderNo=${order.orderNo}`,
+          failUrl: `${window.location.origin}/checkout/fail?orderId=${order.orderId}`,
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "결제 중 오류가 발생했습니다.";
+      if (!msg.includes("취소")) alert(msg);
+      setPaying(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f7fdf9] to-[#edf7f0]">
@@ -421,16 +510,19 @@ function SubscribeContent() {
 
               {/* 결제 버튼 */}
               <button
-                disabled={!allDeliveriesReady}
+                disabled={!allDeliveriesReady || paying}
+                onClick={handlePayment}
                 className={`w-full mt-6 py-4 rounded-xl font-bold text-base transition ${
-                  allDeliveriesReady
+                  allDeliveriesReady && !paying
                     ? plan === "subscription"
                       ? "bg-[#1D9E75] text-white hover:bg-[#167A5B] shadow-lg shadow-[#1D9E75]/20"
                       : "bg-[#EF9F27] text-white hover:bg-[#D48A1E] shadow-lg shadow-[#EF9F27]/20"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                {!allDeliveriesReady
+                {paying
+                  ? "결제 처리 중..."
+                  : !allDeliveriesReady
                   ? `메뉴를 선택해주세요 (${completedCount}/${allDeliveryKeys.length}회 완료)`
                   : plan === "subscription"
                   ? "구독 결제하기"

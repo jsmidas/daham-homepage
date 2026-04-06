@@ -17,13 +17,52 @@ function SuccessContent() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
+    const billing = searchParams.get("billing");
+    const authKey = searchParams.get("authKey");
+    const customerKey = searchParams.get("customerKey");
+    const billingAmount = searchParams.get("amount");
+    const billingOrderNo = searchParams.get("orderNo");
+
+    // 빌링키 발급 성공 → 첫 결제 처리
+    if (billing === "true" && authKey && customerKey) {
+      const processBilling = async () => {
+        try {
+          const res = await fetch("/api/subscribe/billing", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              authKey,
+              customerKey,
+              orderId,
+              amount: Number(billingAmount),
+              orderNo: billingOrderNo,
+            }),
+          });
+          const data = await res.json();
+
+          if (res.ok) {
+            setStatus("success");
+            setOrderNo(data.orderNo ?? null);
+          } else {
+            setStatus("error");
+            setErrorMsg(data.error ?? "구독 결제에 실패했습니다.");
+          }
+        } catch {
+          setStatus("error");
+          setErrorMsg("구독 결제 처리 중 오류가 발생했습니다.");
+        }
+      };
+      processBilling();
+      return;
+    }
+
     if (!paymentKey || !orderId || !amount) {
       // paymentKey가 없으면 이미 처리된 상태 (직접 접근)
       setStatus("success");
       return;
     }
 
-    // 서버에서 결제 승인 처리
+    // 일반결제: 서버에서 결제 승인 처리
     const confirmPayment = async () => {
       try {
         const res = await fetch("/api/payments", {
