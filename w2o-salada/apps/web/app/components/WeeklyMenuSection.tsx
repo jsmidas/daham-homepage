@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 type Product = {
   id: string;
@@ -70,8 +71,8 @@ export default function WeeklyMenuSection() {
                 {/* 메뉴 2종 */}
                 <div className="p-4 space-y-3">
                   {items.map((item, idx) => item && (
-                    <div key={idx} className="flex gap-3 items-start">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center shrink-0 overflow-hidden">
+                    <Link key={idx} href={`/products/${item.id}`} className="flex gap-3 items-start group/item hover:bg-[#f0faf4] rounded-xl p-1.5 -m-1.5 transition-colors">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center shrink-0 overflow-hidden group-hover/item:shadow-md transition-shadow">
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
                         ) : (
@@ -82,12 +83,12 @@ export default function WeeklyMenuSection() {
                         {item.tags && (
                           <span className="text-[10px] font-bold text-[#EF9F27] tracking-wider">{item.tags}</span>
                         )}
-                        <p className="text-[#0A1A0F] font-semibold text-sm leading-tight truncate">{item.name}</p>
+                        <p className="text-[#0A1A0F] font-semibold text-sm leading-tight truncate group-hover/item:text-[#1D9E75] transition-colors">{item.name}</p>
                         <p className="text-[#7aaa90] text-xs mt-0.5">
                           {item.kcal ? `${item.kcal}kcal` : ""}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

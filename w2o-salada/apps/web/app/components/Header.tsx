@@ -17,9 +17,9 @@ export default function Header() {
 
   const navLinks = [
     { href: "#about", label: "서비스 소개" },
+    { href: "/menu", label: "메뉴 소개" },
     { href: "#subscribe", label: "구독 안내" },
     { href: "#weekly-menu", label: "이번 주 식단" },
-    { href: "#delivery", label: "새벽배송" },
     { href: "#reviews", label: "후기" },
   ];
 
