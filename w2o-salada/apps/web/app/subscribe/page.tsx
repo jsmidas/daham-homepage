@@ -548,7 +548,7 @@ function SubscribeContent() {
                           key={idx}
                           onClick={() => setCalTab(idx)}
                           className={`flex-1 py-2.5 text-sm font-bold text-center transition ${
-                            calTab === idx ? "bg-[#1D9E75] text-white" : "bg-[#f7fdf9] text-gray-500 hover:bg-[#e8f5ee]"
+                            calTab === idx ? "bg-[#1D9E75] text-white" : "bg-white text-[#EF9F27] border-2 border-[#EF9F27]/40 hover:bg-[#EF9F27]/5"
                           }`}
                         >{mo.month}월</button>
                       ))}
