@@ -85,18 +85,44 @@ function SubscribeContent() {
       .catch(() => setCalendar([]));
   }, [viewYear, viewMonth]);
 
-  // 배송일 목록
+  // 마감 기준: 배송일 -1일 (24시간 전 마감)
+  const cutoffDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1); // 내일부터 주문 가능
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+
+  // 배송일 목록 (마감 지난 날짜 제외)
   const deliveryDates = useMemo(() => {
     return calendar
       .filter((d) => d.isActive)
       .map((d) => {
         const dateStr = new Date(d.date).toISOString().split("T")[0]!;
         return { ...d, dateStr };
-      });
-  }, [calendar]);
+      })
+      .filter((d) => d.dateStr >= cutoffDate); // 마감 이후만
+  }, [calendar, cutoffDate]);
 
-  // 맛보기: 첫 배송일만
-  const activeDates = mode === "trial" ? deliveryDates.slice(0, 1) : deliveryDates;
+  // 건너뛰기 (사용자가 해제한 배송일)
+  const [skippedDates, setSkippedDates] = useState<Set<string>>(new Set());
+
+  const toggleSkip = (dateStr: string) => {
+    setSkippedDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(dateStr)) next.delete(dateStr);
+      else {
+        next.add(dateStr);
+        // 건너뛴 날짜의 선택 초기화
+        setSelection((s) => ({ ...s, [dateStr]: [] }));
+      }
+      return next;
+    });
+  };
+
+  // 맛보기: 첫 배송일만, 그 외: 건너뛰지 않은 배송일
+  const activeDates = mode === "trial"
+    ? deliveryDates.slice(0, 1)
+    : deliveryDates.filter((d) => !skippedDates.has(d.dateStr));
 
   // 달력 그리드
   const calendarGrid = useMemo(() => {
@@ -111,6 +137,16 @@ function SubscribeContent() {
     return grid;
   }, [viewYear, viewMonth]);
 
+  // 전체 배송일 세트 (마감 포함, 캘린더 표시용)
+  const allDeliveryDateSet = useMemo(() => {
+    return new Set(
+      calendar
+        .filter((d) => d.isActive)
+        .map((d) => new Date(d.date).toISOString().split("T")[0]!)
+    );
+  }, [calendar]);
+
+  // 주문 가능한 배송일 세트
   const deliveryDateSet = useMemo(() => {
     return new Set(activeDates.map((d) => d.dateStr));
   }, [activeDates]);
@@ -426,7 +462,10 @@ function SubscribeContent() {
                   {calendarGrid.map((day, i) => {
                     if (day === null) return <div key={i} className="h-16 border-b border-r border-gray-50" />;
                     const dateStr = getDateStr(day);
-                    const isDelivery = deliveryDateSet.has(dateStr);
+                    const isAllDelivery = allDeliveryDateSet.has(dateStr); // 원래 배송일
+                    const isClosed = isAllDelivery && dateStr < cutoffDate; // 마감됨
+                    const isSkipped = skippedDates.has(dateStr); // 건너뛰기
+                    const isDelivery = deliveryDateSet.has(dateStr) && !isSkipped; // 주문 가능
                     const isSelected = selectedDate === dateStr;
                     const count = getSelectedCount(dateStr);
                     const done = count >= itemsPerDelivery;
@@ -437,18 +476,39 @@ function SubscribeContent() {
                     return (
                       <div
                         key={i}
-                        onClick={() => isDelivery && setSelectedDate(dateStr)}
+                        onClick={() => {
+                          if (isClosed) return;
+                          if (isAllDelivery && mode !== "trial") {
+                            // 배송일이면 선택 (건너뛴 날짜도 클릭하면 메뉴 선택으로)
+                            if (isSkipped) { toggleSkip(dateStr); }
+                            setSelectedDate(dateStr);
+                          } else if (isDelivery) {
+                            setSelectedDate(dateStr);
+                          }
+                        }}
                         className={`h-16 border-b border-r border-gray-50 p-1 text-center transition cursor-pointer ${
-                          isSelected ? "bg-[#1D9E75]/10 ring-2 ring-[#1D9E75] ring-inset"
+                          isClosed ? "bg-gray-50 cursor-not-allowed"
+                            : isSkipped ? "bg-gray-50/80 cursor-pointer"
+                            : isSelected ? "bg-[#1D9E75]/10 ring-2 ring-[#1D9E75] ring-inset"
                             : incomplete ? "bg-red-50/60 ring-1 ring-red-300 ring-inset"
                             : empty ? "bg-amber-50/40"
                             : isDelivery ? "hover:bg-[#f0faf4]" : ""
-                        } ${!isDelivery ? "cursor-default" : ""}`}
+                        } ${!isAllDelivery ? "cursor-default" : ""}`}
                       >
-                        <span className={`text-sm ${dayOfWeek === 0 ? "text-red-400" : dayOfWeek === 6 ? "text-blue-400" : "text-gray-600"} ${!isDelivery ? "opacity-30" : "font-medium"}`}>
+                        <span className={`text-sm ${dayOfWeek === 0 ? "text-red-400" : dayOfWeek === 6 ? "text-blue-400" : "text-gray-600"} ${!isAllDelivery ? "opacity-30" : isClosed ? "opacity-40" : "font-medium"}`}>
                           {day}
                         </span>
-                        {isDelivery && (
+                        {isClosed && (
+                          <div className="mt-1">
+                            <span className="text-[9px] text-gray-400">마감</span>
+                          </div>
+                        )}
+                        {isSkipped && !isClosed && (
+                          <div className="mt-1">
+                            <span className="text-[9px] text-gray-400 line-through">건너뜀</span>
+                          </div>
+                        )}
+                        {isDelivery && !isClosed && (
                           <div className="mt-1">
                             {mode === "auto" ? (
                               <span className="w-2 h-2 bg-[#EF9F27] rounded-full inline-block" />
@@ -499,9 +559,19 @@ function SubscribeContent() {
                     <h3 className="font-bold text-[#0A1A0F]">
                       {new Date(selectedDate + "T00:00:00").toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })}
                     </h3>
-                    <span className={`text-sm font-medium ${getSelectedCount(selectedDate) >= itemsPerDelivery ? "text-[#1D9E75]" : "text-[#EF9F27]"}`}>
-                      {getSelectedCount(selectedDate)}/{itemsPerDelivery} 선택
-                    </span>
+                    <div className="flex items-center gap-3">
+                      {mode !== "trial" && (
+                        <button
+                          onClick={() => toggleSkip(selectedDate)}
+                          className="text-xs text-gray-400 hover:text-red-400 transition"
+                        >
+                          이 날 건너뛰기
+                        </button>
+                      )}
+                      <span className={`text-sm font-medium ${getSelectedCount(selectedDate) >= itemsPerDelivery ? "text-[#1D9E75]" : "text-[#EF9F27]"}`}>
+                        {getSelectedCount(selectedDate)}/{itemsPerDelivery} 선택
+                      </span>
+                    </div>
                   </div>
 
                   {/* 카테고리별 잔여 표시 */}
