@@ -25,9 +25,9 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4">서비스</h4>
             <ul className="space-y-2 text-sm text-gray-500">
-              <li><a href="#menu" className="hover:text-gray-300 transition">메뉴 보기</a></li>
+              <li><a href="#subscribe" className="hover:text-gray-300 transition">구독 안내</a></li>
+              <li><a href="#weekly-menu" className="hover:text-gray-300 transition">이번 주 식단</a></li>
               <li><a href="#delivery" className="hover:text-gray-300 transition">배송 안내</a></li>
-              <li><a href="#subscribe" className="hover:text-gray-300 transition">구독 플랜</a></li>
             </ul>
           </div>
 

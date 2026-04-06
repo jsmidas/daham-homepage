@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 
 const TYPING_TEXTS = [
   "맵시를 다함 !",
-  "건강관리 Let's Start",
+  "매일 새벽, 2종이 도착합니다",
   "새벽의 신선함을 깨웁니다.",
 ];
 
@@ -157,10 +157,10 @@ function FeatureCard({ icon, title, desc, stat, statLabel, delay }: {
 }
 
 const features = [
-  { icon: "eco", title: "100% 신선 재료", desc: "매일 아침 산지에서 직송한 유기농 채소와 과일로 만듭니다.", stat: 100, statLabel: "%" },
+  { icon: "eco", title: "100% 신선 재료", desc: "매일 아침 산지에서 직송한 신선한 채소와 과일로 만듭니다.", stat: 100, statLabel: "%" },
+  { icon: "restaurant_menu", title: "매일 2종 구성", desc: "셰프가 매일 엄선한 샐러드·간편식 2종을 새벽에 배달합니다.", stat: 2, statLabel: "종 매일" },
   { icon: "dark_mode", title: "새벽 배송", desc: "밤사이 준비해서 아침 6시 전 문 앞에 도착합니다.", stat: 6, statLabel: "시 전 도착" },
-  { icon: "restaurant_menu", title: "간편하고 다양한 한 끼", desc: "세척·손질 없이 바로 즐기는 매주 새로운 메뉴 구성입니다.", stat: 30, statLabel: "+ 메뉴" },
-  { icon: "savings", title: "정기구독 할인", desc: "구독할수록 더 합리적인 가격, 꾸준한 건강 관리를 도와드립니다.", stat: 25, statLabel: "% 할인" },
+  { icon: "savings", title: "구독 시 할인", desc: "구독하면 개당 5,900원, 일회 맛보기 대비 1,000원 할인됩니다.", stat: 21, statLabel: "% 할인" },
 ];
 
 export default function AboutSection() {
@@ -181,13 +181,13 @@ export default function AboutSection() {
               |
             </span>
           </h2>
-          <p className="text-[#2d5a3f] mt-4">새벽의 신선함을 깨웁니다.</p>
+          <p className="text-[#2d5a3f] mt-4">매일 신선하게 만든 2종을 새벽에 배달합니다.</p>
           <div className="mt-8 flex justify-center gap-4 flex-wrap">
-            <a href="#menu" className="px-8 py-3 bg-[#1D9E75] text-white rounded-full font-semibold hover:bg-[#167A5B] hover:shadow-lg hover:shadow-[#1D9E75]/30 hover:-translate-y-0.5 transition-all duration-300">
-              메뉴 보기
+            <a href="#subscribe" className="px-8 py-3 bg-[#1D9E75] text-white rounded-full font-semibold hover:bg-[#167A5B] hover:shadow-lg hover:shadow-[#1D9E75]/30 hover:-translate-y-0.5 transition-all duration-300">
+              구독 신청하기
             </a>
-            <a href="#subscribe" className="px-8 py-3 bg-[#EF9F27] text-white rounded-full font-semibold hover:bg-[#D48A1E] hover:shadow-lg hover:shadow-[#EF9F27]/30 hover:-translate-y-0.5 transition-all duration-300">
-              건강관리 Let&apos;s Start
+            <a href="#weekly-menu" className="px-8 py-3 bg-[#EF9F27] text-white rounded-full font-semibold hover:bg-[#D48A1E] hover:shadow-lg hover:shadow-[#EF9F27]/30 hover:-translate-y-0.5 transition-all duration-300">
+              이번 주 식단 보기
             </a>
           </div>
         </div>

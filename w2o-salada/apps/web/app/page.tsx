@@ -1,8 +1,7 @@
 import Header from "./components/Header";
 import HeroSection from "./components/HeroSection";
 import AboutSection from "./components/AboutSection";
-import MenuSection from "./components/MenuSection";
-import StatsSection from "./components/StatsSection";
+import WeeklyMenuSection from "./components/WeeklyMenuSection";
 import SubscribeSection from "./components/SubscribeSection";
 import DeliverySection from "./components/DeliverySection";
 import ReviewsSection from "./components/ReviewsSection";
@@ -17,8 +16,7 @@ export default function Home() {
         <HeroSection />
         <AboutSection />
         <SubscribeSection />
-        <MenuSection />
-        <StatsSection />
+        <WeeklyMenuSection />
         <DeliverySection />
         <ReviewsSection />
         <CTASection />

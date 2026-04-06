@@ -2,28 +2,34 @@ import Link from "next/link";
 
 const plans = [
   {
-    name: "라이트",
-    desc: "가볍게 시작하기",
-    frequency: "주 3회",
-    price: "월 89,000원~",
-    features: ["주 3회 새벽 배송", "메뉴 자유 선택", "무료 배송"],
+    name: "맛보기",
+    desc: "처음이라면 한 번 체험해보세요",
+    highlight: "1회 체험",
+    priceLabel: "13,800원",
+    priceDetail: "6,900원 × 2종",
+    features: [
+      "오늘의 메뉴 2종 배송",
+      "새벽 6시 전 도착",
+      "가입 없이 간편 주문",
+    ],
     popular: false,
+    cta: "맛보기 주문하기",
   },
   {
-    name: "레귤러",
-    desc: "꾸준한 건강 관리",
-    frequency: "주 5회",
-    price: "월 139,000원~",
-    features: ["주 5회 새벽 배송", "메뉴 자유 선택", "무료 배송", "영양 상담 포함"],
+    name: "정기구독",
+    desc: "꾸준한 건강 관리의 시작",
+    highlight: "주 2회 배송",
+    priceLabel: "월 47,200원~",
+    priceDetail: "5,900원 × 2종 × 주 2회",
+    features: [
+      "매 배송 셰프 엄선 2종 제공",
+      "새벽 6시 전 도착",
+      "개당 1,000원 할인 (21%↓)",
+      "1개월 단위 자동 결제",
+      "언제든 일시정지·해지 가능",
+    ],
     popular: true,
-  },
-  {
-    name: "프리미엄",
-    desc: "완벽한 식단 관리",
-    frequency: "매일",
-    price: "월 189,000원~",
-    features: ["매일 새벽 배송", "맞춤 메뉴 설계", "무료 배송", "1:1 영양 상담", "주스/음료 포함"],
-    popular: false,
+    cta: "구독 신청하기",
   },
 ];
 
@@ -36,11 +42,14 @@ export default function SubscribeSection() {
             SUBSCRIPTION
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-[#0A1A0F] mt-3">
-            나에게 맞는<br />플랜을 선택하세요
+            나에게 맞는 방법으로<br />시작하세요
           </h2>
+          <p className="text-[#4a7a5e] mt-3 text-sm md:text-base">
+            매일 셰프가 엄선한 샐러드·간편식 2종이 새벽에 도착합니다
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           {plans.map((plan, i) => (
             <div
               key={i}
@@ -59,9 +68,12 @@ export default function SubscribeSection() {
                 <h3 className="text-[#0A1A0F] text-xl font-bold">{plan.name}</h3>
                 <p className="text-[#4a7a5e] text-sm mt-1">{plan.desc}</p>
               </div>
+              <div className="mb-2">
+                <span className="text-3xl font-black text-[#0A1A0F]">{plan.highlight}</span>
+              </div>
               <div className="mb-6">
-                <span className="text-3xl font-black text-[#0A1A0F]">{plan.frequency}</span>
-                <span className="text-[#4a7a5e] text-sm ml-2">{plan.price}</span>
+                <span className="text-2xl font-bold text-[#1D9E75]">{plan.priceLabel}</span>
+                <p className="text-[#7aaa90] text-xs mt-1">{plan.priceDetail}</p>
               </div>
               <ul className="space-y-3 mb-8">
                 {plan.features.map((f, fi) => (
@@ -81,7 +93,7 @@ export default function SubscribeSection() {
                     : "border border-[#1D9E75]/30 text-[#1D9E75] hover:bg-[#1D9E75]/10"
                 }`}
               >
-                시작하기
+                {plan.cta}
               </Link>
             </div>
           ))}

@@ -1,21 +1,27 @@
-import Link from "next/link";
-
 export default function CTASection() {
   return (
     <section className="py-20 bg-brand-dark">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-          건강한 내일을 위한<br />첫 걸음을 시작하세요
+          내일 아침,<br />문 앞에서 만나요
         </h2>
-        <p className="text-brand-amber mt-4 text-lg">
-          지금 가입하면 첫 주 30% 할인!
+        <p className="text-gray-400 mt-4 text-base md:text-lg">
+          매일 새벽, 신선한 샐러드·간편식 2종이 도착합니다
         </p>
-        <Link
-          href="/#subscribe"
-          className="inline-block mt-8 px-10 py-4 bg-brand-amber text-white rounded-full font-bold text-lg hover:opacity-90 transition"
-        >
-          무료로 시작하기
-        </Link>
+        <div className="mt-8 flex justify-center gap-4 flex-wrap">
+          <a
+            href="#subscribe"
+            className="px-10 py-4 bg-brand-green text-white rounded-full font-bold text-lg hover:bg-[#167A5B] hover:shadow-lg hover:shadow-brand-green/30 hover:-translate-y-0.5 transition-all duration-300"
+          >
+            구독 신청하기
+          </a>
+          <a
+            href="#subscribe"
+            className="px-10 py-4 bg-brand-amber text-white rounded-full font-bold text-lg hover:opacity-90 hover:-translate-y-0.5 transition-all duration-300"
+          >
+            맛보기 주문
+          </a>
+        </div>
       </div>
     </section>
   );

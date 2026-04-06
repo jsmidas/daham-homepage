@@ -17,9 +17,9 @@ export default function Header() {
 
   const navLinks = [
     { href: "#about", label: "서비스 소개" },
-    { href: "#menu", label: "메뉴" },
+    { href: "#subscribe", label: "구독 안내" },
+    { href: "#weekly-menu", label: "이번 주 식단" },
     { href: "#delivery", label: "새벽배송" },
-    { href: "#subscribe", label: "구독" },
     { href: "#reviews", label: "후기" },
   ];
 
@@ -97,7 +97,7 @@ export default function Header() {
                 href="/#subscribe"
                 className="px-5 py-2 bg-brand-green text-white text-sm font-semibold rounded-full hover:bg-brand-mint transition"
               >
-                주문하기
+                구독 신청
               </Link>
             </>
           ) : (
@@ -112,7 +112,7 @@ export default function Header() {
                 href="/#subscribe"
                 className="px-5 py-2 bg-brand-green text-white text-sm font-semibold rounded-full hover:bg-brand-mint transition"
               >
-                주문하기
+                구독 신청
               </Link>
             </>
           )}
@@ -163,7 +163,7 @@ export default function Header() {
               className="mt-2 px-6 py-3 bg-brand-green text-white text-center rounded-full font-semibold"
               onClick={() => setMobileOpen(false)}
             >
-              주문하기
+              구독 신청
             </Link>
           </nav>
         </div>
