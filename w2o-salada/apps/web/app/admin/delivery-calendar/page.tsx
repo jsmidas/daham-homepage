@@ -231,7 +231,7 @@ export default function DeliveryCalendarPage() {
   const meals = products.filter((p) => p.category?.slug !== "salad");
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">배송일 캘린더</h1>
@@ -278,19 +278,19 @@ export default function DeliveryCalendarPage() {
             {/* 날짜 그리드 */}
             <div className="grid grid-cols-7">
               {calendarGrid.map((day, i) => {
-                if (day === null) return <div key={i} className="h-24 border-b border-r border-gray-100" />;
+                if (day === null) return <div key={i} className="min-h-[140px] border-b border-r border-gray-100" />;
 
                 const dateStr = getDateStr(day);
                 const entry = getEntry(day);
                 const isActive = entry?.isActive === true;
                 const isSelected = selectedDate === dateStr;
-                const assignCount = entry?.menuAssignments?.length || 0;
+                const assignments = entry?.menuAssignments || [];
                 const dayOfWeek = new Date(year, month - 1, day).getDay();
 
                 return (
                   <div
                     key={i}
-                    className={`h-24 border-b border-r border-gray-100 p-1.5 cursor-pointer transition relative ${
+                    className={`min-h-[140px] border-b border-r border-gray-100 p-1.5 cursor-pointer transition relative ${
                       isSelected ? "bg-[#1D9E75]/5 ring-2 ring-[#1D9E75] ring-inset" : "hover:bg-gray-50"
                     }`}
                     onClick={() => setSelectedDate(dateStr)}
@@ -311,12 +311,20 @@ export default function DeliveryCalendarPage() {
                       </button>
                     </div>
 
-                    {/* 배송일 표시 */}
+                    {/* 배송일 + 메뉴 이름 목록 */}
                     {isActive && (
                       <div className="mt-1">
                         <span className="text-[10px] font-bold text-[#1D9E75]">배송일</span>
-                        {assignCount > 0 && (
-                          <span className="text-[10px] text-gray-400 ml-1">메뉴 {assignCount}종</span>
+                        {assignments.length > 0 && (
+                          <div className="mt-0.5 space-y-px">
+                            {assignments.map((a) => (
+                              <p key={a.productId} className={`text-[10px] leading-tight truncate font-medium ${
+                                a.product.category?.slug === "salad" ? "text-[#1D9E75]" : "text-[#EF9F27]"
+                              }`}>
+                                {a.product.name}
+                              </p>
+                            ))}
+                          </div>
                         )}
                       </div>
                     )}
