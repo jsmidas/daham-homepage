@@ -420,6 +420,8 @@ function SubscribeContent() {
                     const isSelected = selectedDate === dateStr;
                     const count = getSelectedCount(dateStr);
                     const done = count >= itemsPerDelivery;
+                    const incomplete = isDelivery && count > 0 && !done;
+                    const empty = isDelivery && count === 0 && mode !== "auto";
                     const dayOfWeek = new Date(viewYear, viewMonth - 1, day).getDay();
 
                     return (
@@ -427,7 +429,10 @@ function SubscribeContent() {
                         key={i}
                         onClick={() => isDelivery && setSelectedDate(dateStr)}
                         className={`h-16 border-b border-r border-gray-50 p-1 text-center transition cursor-pointer ${
-                          isSelected ? "bg-[#1D9E75]/10 ring-2 ring-[#1D9E75] ring-inset" : isDelivery ? "hover:bg-[#f0faf4]" : ""
+                          isSelected ? "bg-[#1D9E75]/10 ring-2 ring-[#1D9E75] ring-inset"
+                            : incomplete ? "bg-red-50/60 ring-1 ring-red-300 ring-inset"
+                            : empty ? "bg-amber-50/40"
+                            : isDelivery ? "hover:bg-[#f0faf4]" : ""
                         } ${!isDelivery ? "cursor-default" : ""}`}
                       >
                         <span className={`text-sm ${dayOfWeek === 0 ? "text-red-400" : dayOfWeek === 6 ? "text-blue-400" : "text-gray-600"} ${!isDelivery ? "opacity-30" : "font-medium"}`}>
@@ -442,9 +447,9 @@ function SubscribeContent() {
                                 <span className="material-symbols-outlined text-white text-[10px]">check</span>
                               </span>
                             ) : count > 0 ? (
-                              <span className="text-[10px] font-bold text-[#EF9F27]">{count}/{itemsPerDelivery}</span>
+                              <span className="text-[10px] font-bold text-red-500">{count}/{itemsPerDelivery}</span>
                             ) : (
-                              <span className="w-2 h-2 bg-[#1D9E75]/30 rounded-full inline-block" />
+                              <span className="material-symbols-outlined text-amber-400 text-[14px]">warning</span>
                             )}
                           </div>
                         )}
