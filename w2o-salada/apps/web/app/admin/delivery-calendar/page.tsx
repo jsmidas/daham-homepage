@@ -146,22 +146,54 @@ export default function DeliveryCalendarPage() {
   const selectedEntry = selectedDate ? calendarMap.get(selectedDate) : null;
   const selectedAssignments = selectedEntry?.menuAssignments || [];
 
-  const addProduct = async (productId: string) => {
+  const addProduct = (productId: string) => {
     if (!selectedDate) return;
     const existing = selectedAssignments.map((a) => ({ id: a.productId, sortOrder: a.sortOrder }));
     if (existing.some((e) => e.id === productId)) return;
 
-    const newList = [...existing, { id: productId, sortOrder: existing.length }];
-    await saveAssignments(selectedDate, newList);
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+
+    // 즉시 UI 반영 + 모달 닫기
+    const newAssignment: MenuAssignmentData = {
+      id: `temp-${productId}`,
+      productId,
+      sortOrder: existing.length,
+      product,
+    };
+    setCalendars((prev) =>
+      prev.map((c) => {
+        const cDate = new Date(c.date).toISOString().split("T")[0];
+        return cDate === selectedDate
+          ? { ...c, menuAssignments: [...c.menuAssignments, newAssignment] }
+          : c;
+      })
+    );
     setPickerOpen(false);
+
+    // 백그라운드로 저장
+    const newList = [...existing, { id: productId, sortOrder: existing.length }];
+    saveAssignments(selectedDate, newList);
   };
 
-  const removeProduct = async (productId: string) => {
+  const removeProduct = (productId: string) => {
     if (!selectedDate) return;
+
+    // 즉시 UI 반영
+    setCalendars((prev) =>
+      prev.map((c) => {
+        const cDate = new Date(c.date).toISOString().split("T")[0];
+        return cDate === selectedDate
+          ? { ...c, menuAssignments: c.menuAssignments.filter((a) => a.productId !== productId) }
+          : c;
+      })
+    );
+
+    // 백그라운드로 저장
     const newList = selectedAssignments
       .filter((a) => a.productId !== productId)
       .map((a, i) => ({ id: a.productId, sortOrder: i }));
-    await saveAssignments(selectedDate, newList);
+    saveAssignments(selectedDate, newList);
   };
 
   const saveAssignments = async (date: string, productIds: { id: string; sortOrder: number }[]) => {
