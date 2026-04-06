@@ -4,14 +4,44 @@ import Providers from "./providers";
 import RightDock from "./components/RightDock";
 import MobileInstallBanner from "./components/MobileInstallBanner";
 
+const SITE_URL = "https://www.w2o.co.kr";
+const SITE_NAME = "W2O SALADA";
+const SITE_DESC = "신선한 샐러드 새벽배송 서비스. 정기구독으로 매일 아침 건강한 하루를 시작하세요.";
+const OG_IMAGE = `${SITE_URL}/og-image.png`;
+
 export const metadata: Metadata = {
-  title: "W2O SALADA - 일어나면 이미 준비된 하루",
-  description: "신선한 샐러드 새벽배송 서비스. 정기구독으로 매일 아침 건강한 하루를 시작하세요.",
-  keywords: ["샐러드", "새벽배송", "정기구독", "건강식", "다이어트", "W2O"],
+  title: {
+    default: "W2O SALADA - 일어나면 이미 준비된 하루",
+    template: "%s | W2O SALADA",
+  },
+  description: SITE_DESC,
+  keywords: ["샐러드", "새벽배송", "정기구독", "건강식", "다이어트", "W2O", "샐러드배송", "구독배송"],
   manifest: "/manifest.json",
+  metadataBase: new URL(SITE_URL),
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "W2O SALADA - 일어나면 이미 준비된 하루",
+    description: SITE_DESC,
+    url: SITE_URL,
+    locale: "ko_KR",
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "W2O SALADA 샐러드 새벽배송" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "W2O SALADA - 일어나면 이미 준비된 하루",
+    description: SITE_DESC,
+    images: [OG_IMAGE],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
   appleWebApp: {
     capable: true,
-    title: "W2O SALADA",
+    title: SITE_NAME,
     statusBarStyle: "black-translucent",
   },
   icons: {
