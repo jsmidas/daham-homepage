@@ -50,9 +50,11 @@ function SubscribeContent() {
     paramPlan === "trial" ? "trial" : paramPlan === "auto" ? "auto" : "manual"
   );
 
-  // Step 2: 배송당 수량
-  const [itemsPerDelivery, setItemsPerDelivery] = useState(2);
-  const [config, setConfig] = useState({ minItems: 2, maxItems: 5 });
+  // Step 2: 배송당 수량 (샐러드 + 간편식)
+  const [saladCount, setSaladCount] = useState(2);
+  const [mealCount, setMealCount] = useState(0);
+  const itemsPerDelivery = saladCount + mealCount;
+  const [config, setConfig] = useState({ minItems: 2, maxItems: 10 });
 
   // Step 3: 캘린더 메뉴 선택
   const [calendar, setCalendar] = useState<CalendarDay[]>([]);
@@ -119,13 +121,34 @@ function SubscribeContent() {
     return calendar.find((d) => new Date(d.date).toISOString().split("T")[0] === dateStr)?.menuAssignments || [];
   };
 
-  // 메뉴 선택
+  // 메뉴 선택 (카테고리별 수량 제한)
+  const getCategoryOfProduct = (dateStr: string, productId: string): string => {
+    const menu = getMenuForDate(dateStr);
+    return menu.find((m) => m.productId === productId)?.product.category.slug || "";
+  };
+
+  const getSelectedByCategory = (dateStr: string) => {
+    const ids = selection[dateStr] || [];
+    let salads = 0;
+    let meals = 0;
+    for (const id of ids) {
+      if (getCategoryOfProduct(dateStr, id) === "salad") salads++;
+      else meals++;
+    }
+    return { salads, meals };
+  };
+
   const toggleItem = (dateStr: string, productId: string) => {
     setSelection((prev) => {
       const current = prev[dateStr] || [];
       if (current.includes(productId)) {
         return { ...prev, [dateStr]: current.filter((id) => id !== productId) };
       }
+      // 카테고리별 수량 체크
+      const cat = getCategoryOfProduct(dateStr, productId);
+      const counts = getSelectedByCategory(dateStr);
+      if (cat === "salad" && counts.salads >= saladCount) return prev;
+      if (cat !== "salad" && counts.meals >= mealCount) return prev;
       if (current.length >= itemsPerDelivery) return prev;
       return { ...prev, [dateStr]: [...current, productId] };
     });
@@ -341,27 +364,44 @@ function SubscribeContent() {
                 </button>
               </div>
 
-              {/* 수량 +/- */}
-              <div className="flex items-center gap-4 mb-6 bg-white rounded-2xl border border-[#1D9E75]/10 px-5 py-3">
-                <span className="text-sm font-medium text-[#4a7a5e]">배송 1회당</span>
-                <div className="flex items-center gap-3">
+              {/* 수량 +/- (샐러드 + 간편식) */}
+              <div className="flex flex-wrap items-center gap-3 mb-6 bg-white rounded-2xl border border-[#1D9E75]/10 px-5 py-3">
+                {/* 샐러드 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[#1D9E75]">샐러드</span>
                   <button
-                    onClick={() => setItemsPerDelivery(Math.max(config.minItems, itemsPerDelivery - 1))}
-                    disabled={itemsPerDelivery <= config.minItems}
-                    className="w-9 h-9 rounded-full border-2 border-[#1D9E75]/30 flex items-center justify-center text-[#1D9E75] font-bold text-lg hover:bg-[#1D9E75]/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    −
-                  </button>
-                  <span className="text-2xl font-black text-[#1D9E75] min-w-[3ch] text-center">{itemsPerDelivery}개</span>
+                    onClick={() => setSaladCount(Math.max(0, saladCount - 1))}
+                    disabled={saladCount <= 0 || (saladCount + mealCount) <= config.minItems}
+                    className="w-8 h-8 rounded-full border-2 border-[#1D9E75]/30 flex items-center justify-center text-[#1D9E75] font-bold hover:bg-[#1D9E75]/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  >−</button>
+                  <span className="text-xl font-black text-[#1D9E75] min-w-[2ch] text-center">{saladCount}</span>
                   <button
-                    onClick={() => setItemsPerDelivery(Math.min(config.maxItems, itemsPerDelivery + 1))}
-                    disabled={itemsPerDelivery >= config.maxItems}
-                    className="w-9 h-9 rounded-full border-2 border-[#1D9E75]/30 flex items-center justify-center text-[#1D9E75] font-bold text-lg hover:bg-[#1D9E75]/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    +
-                  </button>
+                    onClick={() => setSaladCount(saladCount + 1)}
+                    disabled={(saladCount + mealCount) >= config.maxItems}
+                    className="w-8 h-8 rounded-full border-2 border-[#1D9E75]/30 flex items-center justify-center text-[#1D9E75] font-bold hover:bg-[#1D9E75]/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  >+</button>
                 </div>
-                <span className="text-xs text-[#7aaa90]">({config.minItems}~{config.maxItems}개)</span>
+
+                <span className="text-gray-300 text-lg">+</span>
+
+                {/* 간편식 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[#EF9F27]">간편식</span>
+                  <button
+                    onClick={() => setMealCount(Math.max(0, mealCount - 1))}
+                    disabled={mealCount <= 0 || (saladCount + mealCount) <= config.minItems}
+                    className="w-8 h-8 rounded-full border-2 border-[#EF9F27]/30 flex items-center justify-center text-[#EF9F27] font-bold hover:bg-[#EF9F27]/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  >−</button>
+                  <span className="text-xl font-black text-[#EF9F27] min-w-[2ch] text-center">{mealCount}</span>
+                  <button
+                    onClick={() => setMealCount(mealCount + 1)}
+                    disabled={(saladCount + mealCount) >= config.maxItems}
+                    className="w-8 h-8 rounded-full border-2 border-[#EF9F27]/30 flex items-center justify-center text-[#EF9F27] font-bold hover:bg-[#EF9F27]/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  >+</button>
+                </div>
+
+                <span className="text-gray-300 text-lg">=</span>
+                <span className="text-lg font-black text-[#0A1A0F]">총 {itemsPerDelivery}개</span>
               </div>
 
               {/* 미니 캘린더 */}
@@ -448,10 +488,21 @@ function SubscribeContent() {
                     </span>
                   </div>
 
+                  {/* 카테고리별 잔여 표시 */}
+                  {(() => { const c = getSelectedByCategory(selectedDate); return (
+                    <div className="flex gap-3 mb-3 text-xs">
+                      <span className="text-[#1D9E75] font-medium">샐러드 {c.salads}/{saladCount}</span>
+                      {mealCount > 0 && <span className="text-[#EF9F27] font-medium">간편식 {c.meals}/{mealCount}</span>}
+                    </div>
+                  ); })()}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {getMenuForDate(selectedDate).map((m) => {
                       const selected = isItemSelected(selectedDate, m.productId);
-                      const full = getSelectedCount(selectedDate) >= itemsPerDelivery && !selected;
+                      const cat = m.product.category.slug;
+                      const counts = getSelectedByCategory(selectedDate);
+                      const catFull = cat === "salad" ? counts.salads >= saladCount : counts.meals >= mealCount;
+                      const full = (catFull && !selected) || (getSelectedCount(selectedDate) >= itemsPerDelivery && !selected);
                       const p = m.product;
                       return (
                         <button
@@ -519,7 +570,9 @@ function SubscribeContent() {
                   }`}>
                     {mode === "manual" ? "직접 골라먹기" : mode === "auto" ? "잘 챙겨서 보내줘" : "맛보기"}
                   </span>
-                  <span className="text-[#7aaa90] text-xs">회당 {itemsPerDelivery}개</span>
+                  <span className="text-[#7aaa90] text-xs">
+                    샐러드 {saladCount}{mealCount > 0 ? ` + 간편식 ${mealCount}` : ""}
+                  </span>
                 </div>
 
                 <div className="space-y-2 mb-6 text-sm">
