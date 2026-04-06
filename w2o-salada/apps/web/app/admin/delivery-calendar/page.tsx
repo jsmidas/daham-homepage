@@ -88,6 +88,17 @@ export default function DeliveryCalendarPage() {
     const existing = getEntry(day);
     const newActive = existing ? !existing.isActive : true;
 
+    // 낙관적 업데이트
+    setCalendars((prev) => {
+      const idx = prev.findIndex((c) => new Date(c.date).toISOString().split("T")[0] === dateStr);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx]!, isActive: newActive };
+        return updated;
+      }
+      return [...prev, { id: "", date: dateStr, isActive: newActive, memo: null, menuAssignments: [] }];
+    });
+
     const res = await fetch("/api/admin/delivery-calendar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -99,8 +110,7 @@ export default function DeliveryCalendarPage() {
     });
 
     if (res.ok) {
-      // 리로드
-      const data = await fetch(`/api/admin/delivery-calendar?year=${year}&month=${month}`).then((r) => r.json());
+      const data = await res.json();
       setCalendars(Array.isArray(data) ? data : []);
     }
   };
@@ -125,7 +135,7 @@ export default function DeliveryCalendarPage() {
     });
 
     if (res.ok) {
-      const data = await fetch(`/api/admin/delivery-calendar?year=${year}&month=${month}`).then((r) => r.json());
+      const data = await res.json();
       setCalendars(Array.isArray(data) ? data : []);
       setMessage("화/목 일괄 지정 완료");
       setTimeout(() => setMessage(""), 2000);
@@ -156,13 +166,22 @@ export default function DeliveryCalendarPage() {
 
   const saveAssignments = async (date: string, productIds: { id: string; sortOrder: number }[]) => {
     setSaving(true);
-    await fetch("/api/admin/menu-assignment", {
+    const res = await fetch("/api/admin/menu-assignment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date, productIds }),
     });
-    const data = await fetch(`/api/admin/delivery-calendar?year=${year}&month=${month}`).then((r) => r.json());
-    setCalendars(Array.isArray(data) ? data : []);
+
+    if (res.ok) {
+      const updated = await res.json();
+      // 해당 날짜 엔트리만 교체
+      setCalendars((prev) =>
+        prev.map((c) => {
+          const cDate = new Date(c.date).toISOString().split("T")[0];
+          return cDate === date ? { ...c, menuAssignments: updated.menuAssignments || [] } : c;
+        })
+      );
+    }
     setSaving(false);
   };
 

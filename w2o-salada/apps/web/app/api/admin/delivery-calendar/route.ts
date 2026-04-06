@@ -44,15 +44,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "year, month, dates 필수" }, { status: 400 });
   }
 
-  // 각 날짜에 대해 upsert
-  for (const d of dates) {
-    const dateObj = new Date(d.date);
-    await prisma.deliveryCalendar.upsert({
-      where: { date: dateObj },
-      update: { isActive: d.isActive, memo: d.memo || null },
-      create: { date: dateObj, isActive: d.isActive, memo: d.memo || null },
-    });
-  }
+  // 각 날짜에 대해 upsert (트랜잭션으로 일괄 처리)
+  await prisma.$transaction(
+    dates.map((d) => {
+      const dateObj = new Date(d.date);
+      return prisma.deliveryCalendar.upsert({
+        where: { date: dateObj },
+        update: { isActive: d.isActive, memo: d.memo || null },
+        create: { date: dateObj, isActive: d.isActive, memo: d.memo || null },
+      });
+    })
+  );
 
   // 이 월에서 dates에 포함되지 않은 기존 배송일은 비활성화
   const startDate = new Date(year, month - 1, 1);
