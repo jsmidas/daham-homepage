@@ -476,8 +476,17 @@ function SubscribeContent() {
                 <span className="text-gray-300 text-lg">=</span>
                 <span className="text-lg font-black text-[#0A1A0F]">총 {itemsPerDelivery}개</span>
 
-                {/* 알아서 배송 추천 버튼 */}
-                {mode !== "auto" && mode !== "trial" && (
+                {/* 알아서 배송 추천 버튼 / 상태 표시 */}
+                {mode === "auto" ? (
+                  <div className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-[#EF9F27]/10 text-[#EF9F27] rounded-full text-xs font-bold">
+                    <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                    잘 챙겨서 보내줘로 주문됨
+                    <button
+                      onClick={() => setMode("manual")}
+                      className="ml-2 text-[10px] text-gray-400 hover:text-gray-600 underline"
+                    >직접 선택으로 변경</button>
+                  </div>
+                ) : mode !== "trial" ? (
                   <button
                     onClick={() => { setMode("auto"); setSelection({}); }}
                     className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#EF9F27] to-[#f0b54a] text-white rounded-full text-xs font-bold shadow-lg shadow-[#EF9F27]/25 hover:shadow-xl hover:scale-105 transition-all animate-pulse hover:animate-none"
@@ -485,7 +494,7 @@ function SubscribeContent() {
                     <span className="material-symbols-outlined text-sm">auto_awesome</span>
                     알아서 배송 추천!
                   </button>
-                )}
+                ) : null}
               </div>
 
               {/* 최소 8회 미달 경고 */}
@@ -516,7 +525,7 @@ function SubscribeContent() {
                     </div>
                     <div className="grid grid-cols-7">
                       {grid.map((day, i) => {
-                        if (day === null) return <div key={i} className="h-14 border-b border-r border-gray-50" />;
+                        if (day === null) return <div key={i} className="min-h-[3.5rem] border-b border-r border-gray-50" />;
                         const dateStr = getDateStr(mY, mM, day);
                         const isAllDelivery = allDeliveryDateSet.has(dateStr);
                         const isClosed = isAllDelivery && dateStr < cutoffDate;
@@ -541,7 +550,7 @@ function SubscribeContent() {
                                 setSelectedDate(dateStr);
                               }
                             }}
-                            className={`h-14 border-b border-r border-gray-50 p-1 text-center transition cursor-pointer ${
+                            className={`min-h-[3.5rem] border-b border-r border-gray-50 p-1 text-center transition cursor-pointer ${
                               isClosed ? "bg-gray-50 cursor-not-allowed"
                                 : isSkipped ? "bg-gray-50/80 cursor-pointer"
                                 : isSelected ? "bg-[#1D9E75]/10 ring-2 ring-[#1D9E75] ring-inset"
@@ -566,7 +575,11 @@ function SubscribeContent() {
                             {isDelivery && !isClosed && (
                               <div className="mt-0.5">
                                 {mode === "auto" ? (
-                                  <span className="w-1.5 h-1.5 bg-[#EF9F27] rounded-full inline-block" />
+                                  <div className="space-y-px">
+                                    {getMenuForDate(dateStr).slice(0, itemsPerDelivery).map((m) => (
+                                      <p key={m.productId} className="text-[7px] leading-tight truncate text-[#EF9F27] font-medium">{m.product.name}</p>
+                                    ))}
+                                  </div>
                                 ) : done ? (
                                   <span className="w-4 h-4 bg-[#1D9E75] rounded-full inline-flex items-center justify-center">
                                     <span className="material-symbols-outlined text-white text-[9px]">check</span>
