@@ -114,14 +114,14 @@ function FeatureCard({ icon, title, desc, stat, statLabel, delay }: {
         style={{ background: "radial-gradient(circle, rgba(29,158,117,0.25) 0%, transparent 70%)" }}
       />
 
-      <div className="relative bg-white/90 backdrop-blur-sm border border-[#1D9E75]/15 rounded-2xl p-7 text-center overflow-hidden group-hover:bg-white group-hover:shadow-2xl group-hover:shadow-[#1D9E75]/15 group-hover:border-[#1D9E75]/30 transition-all duration-500">
+      <div className="relative bg-white/90 backdrop-blur-sm border border-[#1D9E75]/15 rounded-2xl p-4 sm:p-7 text-center overflow-hidden group-hover:bg-white group-hover:shadow-2xl group-hover:shadow-[#1D9E75]/15 group-hover:border-[#1D9E75]/30 transition-all duration-500">
         {/* 장식 원 */}
         <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#1D9E75]/5 group-hover:bg-[#1D9E75]/10 group-hover:scale-150 transition-all duration-700" />
         <div className="absolute -bottom-6 -left-6 w-16 h-16 rounded-full bg-[#EF9F27]/5 group-hover:bg-[#EF9F27]/10 group-hover:scale-150 transition-all duration-700" />
 
         {/* 아이콘 */}
-        <div className="relative z-10 w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#1D9E75] to-[#5DCAA5] flex items-center justify-center shadow-lg shadow-[#1D9E75]/20 group-hover:shadow-xl group-hover:shadow-[#1D9E75]/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-          <span className="material-symbols-outlined text-white text-3xl" style={{
+        <div className="relative z-10 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#1D9E75] to-[#5DCAA5] flex items-center justify-center shadow-lg shadow-[#1D9E75]/20 group-hover:shadow-xl group-hover:shadow-[#1D9E75]/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+          <span className="material-symbols-outlined text-white text-2xl sm:text-3xl" style={{
             animation: hovered ? "iconPulse 0.6s ease-in-out" : "none",
           }}>
             {icon}
@@ -129,22 +129,22 @@ function FeatureCard({ icon, title, desc, stat, statLabel, delay }: {
         </div>
 
         {/* 숫자 카운트업 */}
-        <div className="relative z-10 text-3xl font-black text-[#1D9E75] mb-1 tabular-nums">
+        <div className="relative z-10 text-2xl sm:text-3xl font-black text-[#1D9E75] mb-0.5 sm:mb-1 tabular-nums">
           {count.toLocaleString()}{statLabel}
         </div>
 
         {/* 타이틀 */}
-        <h3 className="relative z-10 text-[#0A1A0F] font-bold text-lg mb-2 group-hover:text-[#1D9E75] transition-colors duration-300">
+        <h3 className="relative z-10 text-[#0A1A0F] font-bold text-base sm:text-lg mb-1 sm:mb-2 group-hover:text-[#1D9E75] transition-colors duration-300">
           {title}
         </h3>
 
         {/* 설명 */}
-        <p className="relative z-10 text-[#4a7a5e] text-sm leading-relaxed">
+        <p className="relative z-10 text-[#4a7a5e] text-xs sm:text-sm leading-relaxed">
           {desc}
         </p>
 
         {/* 하단 바 */}
-        <div className="mt-5 h-1 rounded-full bg-gray-100 overflow-hidden">
+        <div className="mt-3 sm:mt-5 h-1 rounded-full bg-gray-100 overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-r from-[#1D9E75] to-[#5DCAA5] transition-all duration-1000 ease-out"
             style={{ width: visible ? "100%" : "0%" }}
@@ -158,7 +158,7 @@ function FeatureCard({ icon, title, desc, stat, statLabel, delay }: {
 
 const features = [
   { icon: "eco", title: "100% 신선 재료", desc: "매일 아침 산지에서 직송한 신선한 채소와 과일로 만듭니다.", stat: 100, statLabel: "%" },
-  { icon: "restaurant_menu", title: "매일 2종 구성", desc: "셰프가 매일 엄선한 샐러드·간편식 2종을 새벽에 배달합니다.", stat: 2, statLabel: "종 매일" },
+  { icon: "restaurant_menu", title: "최다 제품구성", desc: "샐러드·그레인볼·프로틴 등 다양한 메뉴를 매일 새롭게 구성합니다.", stat: 12, statLabel: "종+" },
   { icon: "dark_mode", title: "새벽 배송", desc: "밤사이 준비해서 아침 6시 전 문 앞에 도착합니다.", stat: 6, statLabel: "시 전 도착" },
   { icon: "savings", title: "구독 시 할인", desc: "정가 7,500원 → 구독 5,900원! 개당 1,600원 할인됩니다.", stat: 21, statLabel: "% 할인" },
 ];
@@ -193,7 +193,7 @@ export default function AboutSection() {
         </div>
 
         {/* 특장점 카드 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {features.map((f, i) => (
             <FeatureCard key={i} {...f} delay={i * 150} />
           ))}
