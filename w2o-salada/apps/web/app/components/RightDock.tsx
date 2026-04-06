@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useInstallPWA } from "./InstallPWA";
 
 type DockItem = {
@@ -86,6 +87,7 @@ function DockTile({ item }: { item: DockItem }) {
 }
 
 export default function RightDock() {
+  const pathname = usePathname();
   const [showTop, setShowTop] = useState(false);
   const [openFaq, setOpenFaq] = useState<string | null>(null);
   const [config, setConfig] = useState<SidebarConfig>(DEFAULT_CONFIG);
@@ -117,6 +119,9 @@ export default function RightDock() {
   ];
 
   const activeFaq = config.faqs.find((f) => f.id === openFaq);
+
+  // 관리자 페이지에서는 숨김
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <>
