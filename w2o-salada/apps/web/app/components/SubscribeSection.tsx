@@ -5,6 +5,7 @@ const plans = [
     name: "맛보기",
     desc: "처음이라면 한 번 체험해보세요",
     highlight: "1회 체험",
+    originalPrice: "15,000원",
     priceLabel: "13,800원",
     priceDetail: "6,900원 × 2종",
     features: [
@@ -19,6 +20,7 @@ const plans = [
     name: "정기구독",
     desc: "꾸준한 건강 관리의 시작",
     highlight: "주 2회 배송",
+    originalPrice: "60,000원",
     priceLabel: "월 47,200원~",
     priceDetail: "5,900원 × 2종 × 주 2회",
     features: [
@@ -72,7 +74,9 @@ export default function SubscribeSection() {
                 <span className="text-3xl font-black text-[#0A1A0F]">{plan.highlight}</span>
               </div>
               <div className="mb-6">
+                <span className="text-gray-400 text-lg line-through mr-2">{plan.originalPrice}</span>
                 <span className="text-2xl font-bold text-[#1D9E75]">{plan.priceLabel}</span>
+                <span className="ml-2 px-2 py-0.5 bg-red-50 text-red-500 text-xs font-bold rounded">21%</span>
                 <p className="text-[#7aaa90] text-xs mt-1">{plan.priceDetail}</p>
               </div>
               <ul className="space-y-3 mb-8">

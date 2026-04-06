@@ -7,6 +7,7 @@ type Product = {
   id: string;
   name: string;
   description: string | null;
+  originalPrice: number | null;
   price: number;
   kcal: number | null;
   tags: string | null;
@@ -84,9 +85,12 @@ export default function WeeklyMenuSection() {
                           <span className="text-[10px] font-bold text-[#EF9F27] tracking-wider">{item.tags}</span>
                         )}
                         <p className="text-[#0A1A0F] font-semibold text-sm leading-tight truncate group-hover/item:text-[#1D9E75] transition-colors">{item.name}</p>
-                        <p className="text-[#7aaa90] text-xs mt-0.5">
-                          {item.kcal ? `${item.kcal}kcal` : ""}
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {item.originalPrice && item.originalPrice > item.price && (
+                            <span className="text-gray-400 text-[10px] line-through">{item.originalPrice.toLocaleString()}원</span>
+                          )}
+                          <span className="text-[#1D9E75] text-xs font-bold">{item.price.toLocaleString()}원</span>
+                        </div>
                       </div>
                     </Link>
                   ))}

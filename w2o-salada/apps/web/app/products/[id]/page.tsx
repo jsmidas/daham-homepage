@@ -120,29 +120,34 @@ export default function ProductDetailPage() {
 
             {/* 가격 */}
             <div className="bg-white rounded-xl p-5 border border-[#1D9E75]/10 mb-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[#7aaa90] text-sm mb-1">가격</p>
-                  <div className="flex items-center gap-3">
-                    {product.originalPrice && product.originalPrice > product.price && (
-                      <span className="text-gray-400 text-sm line-through">
-                        {product.originalPrice.toLocaleString()}원
-                      </span>
-                    )}
-                    <span className="text-2xl font-black text-[#0A1A0F]">
-                      {product.price.toLocaleString()}
-                      <span className="text-base font-normal text-[#7aaa90] ml-1">원</span>
+              {/* 구독가 */}
+              <div className="mb-4">
+                <p className="text-[#1D9E75] text-xs font-semibold tracking-wider mb-1">구독가</p>
+                <div className="flex items-center gap-3">
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-gray-400 text-lg line-through">
+                      {product.originalPrice.toLocaleString()}원
                     </span>
-                    {product.originalPrice && product.originalPrice > product.price && (
-                      <span className="px-2 py-0.5 bg-red-50 text-red-500 text-sm font-bold rounded">
-                        {Math.round((1 - product.price / product.originalPrice) * 100)}%
-                      </span>
-                    )}
-                  </div>
+                  )}
+                  <span className="text-3xl font-black text-[#0A1A0F]">
+                    {product.price.toLocaleString()}
+                    <span className="text-base font-normal text-[#7aaa90] ml-1">원</span>
+                  </span>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="px-2.5 py-1 bg-red-50 text-red-500 text-sm font-bold rounded-lg">
+                      {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
+                    </span>
+                  )}
                 </div>
-                <div className="text-right">
-                  <p className="text-[#7aaa90] text-xs">맛보기</p>
-                  <p className="text-[#4a7a5e] font-semibold">6,900원</p>
+              </div>
+              {/* 맛보기가 */}
+              <div className="pt-3 border-t border-[#1D9E75]/10 flex items-center justify-between">
+                <p className="text-[#7aaa90] text-sm">맛보기 (1회)</p>
+                <div className="flex items-center gap-2">
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-gray-400 text-sm line-through">{product.originalPrice.toLocaleString()}원</span>
+                  )}
+                  <span className="text-[#4a7a5e] font-bold text-lg">6,900원</span>
                 </div>
               </div>
             </div>

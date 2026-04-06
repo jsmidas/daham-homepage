@@ -160,7 +160,7 @@ const features = [
   { icon: "eco", title: "100% 신선 재료", desc: "매일 아침 산지에서 직송한 신선한 채소와 과일로 만듭니다.", stat: 100, statLabel: "%" },
   { icon: "restaurant_menu", title: "매일 2종 구성", desc: "셰프가 매일 엄선한 샐러드·간편식 2종을 새벽에 배달합니다.", stat: 2, statLabel: "종 매일" },
   { icon: "dark_mode", title: "새벽 배송", desc: "밤사이 준비해서 아침 6시 전 문 앞에 도착합니다.", stat: 6, statLabel: "시 전 도착" },
-  { icon: "savings", title: "구독 시 할인", desc: "구독하면 개당 5,900원, 일회 맛보기 대비 1,000원 할인됩니다.", stat: 21, statLabel: "% 할인" },
+  { icon: "savings", title: "구독 시 할인", desc: "정가 7,500원 → 구독 5,900원! 개당 1,600원 할인됩니다.", stat: 21, statLabel: "% 할인" },
 ];
 
 export default function AboutSection() {

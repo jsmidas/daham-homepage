@@ -165,6 +165,11 @@ export default function MenuPage() {
                       <span className="text-[#1D9E75] font-bold text-lg">
                         {item.price.toLocaleString()}원
                       </span>
+                      {item.originalPrice && item.originalPrice > item.price && (
+                        <span className="px-1.5 py-0.5 bg-red-50 text-red-500 text-xs font-bold rounded">
+                          {Math.round((1 - item.price / item.originalPrice) * 100)}%
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
