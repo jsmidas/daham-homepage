@@ -3,11 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useCart } from "../store/cart";
 
 export default function Header() {
   const { data: session } = useSession();
+  const { totalItems } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 80);
@@ -74,6 +79,18 @@ export default function Header() {
 
         {/* CTA + 로그인 */}
         <div className="hidden md:flex items-center gap-3">
+          {/* 장바구니 아이콘 */}
+          <Link
+            href="/cart"
+            className={`relative p-2 rounded-full transition ${scrolled ? "text-gray-600 hover:text-brand-green hover:bg-brand-green/10" : "text-white/80 hover:text-white hover:bg-white/10"}`}
+          >
+            <span className="material-symbols-outlined text-xl">shopping_cart</span>
+            {mounted && totalItems() > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#EF9F27] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {totalItems() > 99 ? "99+" : totalItems()}
+              </span>
+            )}
+          </Link>
           {session ? (
             <>
               {(session.user as { role?: string })?.role === "ADMIN" && (
@@ -88,6 +105,7 @@ export default function Header() {
                 {session.user?.name}님
               </span>
               <button
+                type="button"
                 onClick={() => signOut()}
                 className={`text-sm ${scrolled ? "text-gray-500 hover:text-gray-700" : "text-white/60 hover:text-white"} transition`}
               >
@@ -158,6 +176,19 @@ export default function Header() {
                 관리자 페이지
               </Link>
             )}
+            <Link
+              href="/cart"
+              className="text-gray-800 font-medium py-2 flex items-center gap-2"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="material-symbols-outlined text-lg">shopping_cart</span>
+              장바구니
+              {mounted && totalItems() > 0 && (
+                <span className="w-5 h-5 bg-[#EF9F27] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {totalItems()}
+                </span>
+              )}
+            </Link>
             <Link
               href="/subscribe?plan=subscription"
               className="mt-2 px-6 py-3 bg-brand-green text-white text-center rounded-full font-semibold"

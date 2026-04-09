@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "../../store/cart";
 
 type Product = {
   id: string;
@@ -19,8 +20,11 @@ type Product = {
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
+  const { addItem } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [added, setAdded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/products/${id}`)
@@ -155,20 +159,39 @@ export default function ProductDetailPage() {
             {/* CTA 버튼 */}
             <div className="flex gap-3">
               <Link
-                href="/#subscribe"
+                href="/subscribe?plan=subscription"
                 className="flex-1 py-3.5 bg-[#1D9E75] text-white rounded-xl font-semibold hover:bg-[#167A5B] transition text-center flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-xl">autorenew</span>
                 구독으로 만나기
               </Link>
-              <Link
-                href="/#subscribe"
+              <button
+                onClick={() => {
+                  addItem({
+                    productId: product.id,
+                    name: product.name,
+                    price: product.originalPrice && product.originalPrice > product.price ? product.originalPrice : product.price,
+                    imageUrl: product.imageUrl,
+                    quantity: 1,
+                  });
+                  setAdded(true);
+                  setTimeout(() => setAdded(false), 2000);
+                }}
                 className="flex-1 py-3.5 border border-[#EF9F27] text-[#EF9F27] rounded-xl font-semibold hover:bg-[#EF9F27]/10 transition text-center flex items-center justify-center gap-2"
               >
-                <span className="material-symbols-outlined text-xl">local_dining</span>
-                맛보기 주문
-              </Link>
+                <span className="material-symbols-outlined text-xl">{added ? "check_circle" : "local_dining"}</span>
+                {added ? "담았습니다!" : "맛보기 담기"}
+              </button>
             </div>
+            {added && (
+              <button
+                onClick={() => router.push("/cart")}
+                className="w-full mt-3 py-3 bg-[#EF9F27] text-white rounded-xl font-semibold hover:opacity-90 transition flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-xl">shopping_cart</span>
+                장바구니로 이동
+              </button>
+            )}
 
             {/* 배송 안내 */}
             <div className="mt-8 space-y-3">

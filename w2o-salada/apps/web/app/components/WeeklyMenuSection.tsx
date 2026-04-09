@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useCart } from "../store/cart";
 
 type Product = {
   id: string;
@@ -227,25 +228,56 @@ function generateFallback(products: Product[]) {
 }
 
 function MenuItemRow({ item }: { item: Product }) {
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem({
+      productId: item.id,
+      name: item.name,
+      price: item.originalPrice && item.originalPrice > item.price ? item.originalPrice : item.price,
+      imageUrl: item.imageUrl,
+      quantity: 1,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
+
   return (
-    <Link href={`/products/${item.id}`} className="flex gap-3 items-center group/item hover:bg-[#f0faf4] rounded-xl p-1.5 -m-1.5 transition-colors">
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center shrink-0 overflow-hidden group-hover/item:shadow-md transition-shadow">
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
-        ) : (
-          <span className="material-symbols-outlined text-[#1D9E75] text-xl">lunch_dining</span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        {item.tags && <span className="text-[9px] font-bold text-[#EF9F27] tracking-wider">{item.tags}</span>}
-        <p className="text-[#0A1A0F] font-semibold text-sm leading-tight truncate group-hover/item:text-[#1D9E75] transition-colors">{item.name}</p>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0">
-        {item.originalPrice && item.originalPrice > item.price && (
-          <span className="text-gray-400 text-[10px] line-through">{item.originalPrice.toLocaleString()}원</span>
-        )}
-        <span className="text-[#1D9E75] text-xs font-bold">{item.price.toLocaleString()}원</span>
-      </div>
-    </Link>
+    <div className="flex gap-3 items-center group/item hover:bg-[#f0faf4] rounded-xl p-1.5 -m-1.5 transition-colors">
+      <Link href={`/products/${item.id}`} className="flex gap-3 items-center flex-1 min-w-0">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center shrink-0 overflow-hidden group-hover/item:shadow-md transition-shadow">
+          {item.imageUrl ? (
+            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+          ) : (
+            <span className="material-symbols-outlined text-[#1D9E75] text-xl">lunch_dining</span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          {item.tags && <span className="text-[9px] font-bold text-[#EF9F27] tracking-wider">{item.tags}</span>}
+          <p className="text-[#0A1A0F] font-semibold text-sm leading-tight truncate group-hover/item:text-[#1D9E75] transition-colors">{item.name}</p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {item.originalPrice && item.originalPrice > item.price && (
+            <span className="text-gray-400 text-[10px] line-through">{item.originalPrice.toLocaleString()}원</span>
+          )}
+          <span className="text-[#1D9E75] text-xs font-bold">{item.price.toLocaleString()}원</span>
+        </div>
+      </Link>
+      <button
+        type="button"
+        onClick={handleAddToCart}
+        className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+          added
+            ? "bg-[#1D9E75] text-white"
+            : "bg-[#1D9E75]/10 text-[#1D9E75] hover:bg-[#1D9E75]/20"
+        }`}
+        title="장바구니 담기"
+      >
+        <span className="material-symbols-outlined text-lg">{added ? "check" : "add_shopping_cart"}</span>
+      </button>
+    </div>
   );
 }
