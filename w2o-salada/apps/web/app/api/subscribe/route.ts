@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
-import { requireAuth } from "../../lib/auth-guard";
 
 // POST: 구독/맛보기 주문 생성
 export async function POST(request: Request) {
-  const { error, session } = await requireAuth();
-  if (error) return error;
-
   try {
+    const { prisma } = await import("@repo/db");
     const body = await request.json();
     const { plan, selectionMode, itemsPerDelivery, selections } = body as {
       plan: "trial" | "subscription";
@@ -20,7 +16,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "plan, selections 필수" }, { status: 400 });
     }
 
-    const userId = (session!.user as { id: string }).id;
+    // 로그인 사용자 또는 게스트
+    let userId = "guest";
+    try {
+      const { auth } = await import("../../../auth");
+      const session = await auth();
+      if (session?.user) {
+        userId = (session.user as { id?: string }).id ?? "guest";
+      }
+    } catch {};
 
     // 선택한 상품 조회
     const allProductIds = selections.flatMap((s) => s.productIds);
