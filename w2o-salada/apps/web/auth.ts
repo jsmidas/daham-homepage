@@ -5,7 +5,11 @@ import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
-import { prisma } from "@repo/db";
+
+async function getPrisma() {
+  const { prisma } = await import("@repo/db");
+  return prisma;
+}
 
 const config: NextAuthConfig = {
   providers: [
@@ -34,6 +38,7 @@ const config: NextAuthConfig = {
 
         try {
           // DB에서 아이디 또는 이메일로 검색
+          const prisma = await getPrisma();
           const user = await prisma.user.findFirst({
             where: {
               OR: [
@@ -101,6 +106,7 @@ const config: NextAuthConfig = {
           const email = user.email;
           if (!email) return false;
 
+          const prisma = await getPrisma();
           const existing = await prisma.user.findUnique({ where: { email } });
           if (!existing) {
             await prisma.user.create({
