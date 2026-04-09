@@ -131,6 +131,6 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("POST /api/subscribe error:", err);
-    return NextResponse.json({ error: "주문 생성 실패" }, { status: 500 });
+    return NextResponse.json({ error: "주문 생성 실패", detail: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
