@@ -318,8 +318,9 @@ function SubscribeContent() {
         ? "W2O 구독 (잘 챙겨서 보내줘)"
         : "W2O 구독 (직접 골라먹기)";
 
+      const payment = tossPayments.payment({ customerKey: userId });
+
       if (mode === "trial") {
-        const payment = tossPayments.payment({ customerKey: userId });
         await payment.requestPayment({
           method: "CARD",
           amount: { value: order.totalAmount, currency: "KRW" },
@@ -330,8 +331,7 @@ function SubscribeContent() {
           failUrl: `${window.location.origin}/checkout/fail?orderId=${order.orderId}`,
         });
       } else {
-        const billing = tossPayments.billing({ customerKey: userId });
-        await billing.requestBillingKeyAuth({
+        await payment.requestBillingAuth({
           method: "CARD",
           successUrl: `${window.location.origin}/checkout/success?orderId=${order.orderId}&billing=true&amount=${order.totalAmount}&orderNo=${order.orderNo}`,
           failUrl: `${window.location.origin}/checkout/fail?orderId=${order.orderId}`,
