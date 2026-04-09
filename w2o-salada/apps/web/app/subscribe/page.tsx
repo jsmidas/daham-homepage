@@ -273,10 +273,6 @@ function SubscribeContent() {
 
   // 결제
   const handlePayment = async () => {
-    if (!session?.user) {
-      router.push(`/login?redirect=/subscribe?plan=${mode}`);
-      return;
-    }
     setPaying(true);
 
     try {
@@ -314,7 +310,7 @@ function SubscribeContent() {
 
       const { loadTossPayments } = await import("@tosspayments/tosspayments-sdk");
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-      const userId = (session.user as { id?: string }).id ?? "guest";
+      const userId = (session?.user as { id?: string })?.id ?? `GUEST_${Date.now()}`;
 
       const orderName = mode === "trial"
         ? "W2O 맛보기"
@@ -329,7 +325,7 @@ function SubscribeContent() {
           amount: { value: order.totalAmount, currency: "KRW" },
           orderId: order.orderNo,
           orderName,
-          customerName: session.user?.name || "고객",
+          customerName: session?.user?.name || "고객",
           successUrl: `${window.location.origin}/checkout/success?orderId=${order.orderId}`,
           failUrl: `${window.location.origin}/checkout/fail?orderId=${order.orderId}`,
         });
