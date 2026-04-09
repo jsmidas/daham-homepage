@@ -3,8 +3,12 @@ import { NextResponse } from "next/server";
 // POST: 구독/맛보기 주문 생성
 export async function POST(request: Request) {
   try {
-    const { prisma } = await import("@repo/db");
-    const body = await request.json();
+    // prisma import + body 파싱을 병렬로
+    const [{ prisma }, body] = await Promise.all([
+      import("@repo/db"),
+      request.json(),
+    ]);
+
     const { plan, selectionMode, itemsPerDelivery, selections } = body as {
       plan: "trial" | "subscription";
       selectionMode?: "MANUAL" | "AUTO";
@@ -16,49 +20,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "plan, selections 필수" }, { status: 400 });
     }
 
-    // 로그인 사용자 또는 게스트
-    let userId = "guest";
-    try {
-      const { auth } = await import("../../../auth");
-      const session = await auth();
-      if (session?.user) {
-        const sessionUserId = (session.user as { id?: string }).id;
-        if (sessionUserId) {
-          // DB에 해당 유저가 존재하는지 확인
-          const userExists = await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true } });
-          userId = userExists ? sessionUserId : "guest";
-        }
-      }
-    } catch {}
-
-    // 선택한 상품 조회
     const allProductIds = selections.flatMap((s) => s.productIds);
-    const products = await prisma.product.findMany({
-      where: { id: { in: allProductIds } },
-    });
-    const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // 금액 계산
-    let totalAmount = 0;
-    for (const sel of selections) {
-      for (const pid of sel.productIds) {
-        const product = productMap.get(pid);
-        if (!product) continue;
-        totalAmount += plan === "trial" ? (product.originalPrice || product.price) : product.price;
-      }
-    }
+    // 유저 확인 + 상품 조회를 병렬로
+    const [userId, products] = await Promise.all([
+      resolveUserId(prisma),
+      prisma.product.findMany({ where: { id: { in: allProductIds } } }),
+    ]);
 
-    // 주문번호 생성
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const count = await prisma.order.count({ where: { orderNo: { startsWith: `W2O-${today}` } } });
-    const orderNo = `W2O-${today}-${String(count + 1).padStart(4, "0")}`;
-
-    // 유효한 상품만 필터링
+    const productMap = new Map(products.map((p: { id: string }) => [p.id, p]));
     const validProductIds = allProductIds.filter((pid) => productMap.has(pid));
 
     if (validProductIds.length === 0) {
       return NextResponse.json({ error: "유효한 상품이 없습니다." }, { status: 400 });
     }
+
+    // 금액 계산
+    let totalAmount = 0;
+    for (const sel of selections) {
+      for (const pid of sel.productIds) {
+        const product = productMap.get(pid) as { originalPrice: number | null; price: number } | undefined;
+        if (!product) continue;
+        totalAmount += plan === "trial" ? (product.originalPrice || product.price) : product.price;
+      }
+    }
+
+    // 주문번호 생성 (랜덤으로 변경 — count 쿼리 제거)
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const orderNo = `W2O-${today}-${rand}`;
 
     // 주문 생성
     const order = await prisma.order.create({
@@ -71,20 +61,15 @@ export async function POST(request: Request) {
         deliveryFee: 0,
         items: {
           create: validProductIds.map((pid) => {
-            const product = productMap.get(pid)!;
+            const product = productMap.get(pid) as { originalPrice: number | null; price: number };
             const unitPrice = plan === "trial" ? (product.originalPrice || product.price) : product.price;
-            return {
-              productId: pid,
-              quantity: 1,
-              unitPrice,
-              totalPrice: unitPrice,
-            };
+            return { productId: pid, quantity: 1, unitPrice, totalPrice: unitPrice };
           }),
         },
       },
     });
 
-    // 구독인 경우 Subscription + Period + Selection 생성
+    // 구독인 경우: Subscription + Period + Selection을 최소 쿼리로
     if (plan !== "trial") {
       const now = new Date();
       const subscription = await prisma.subscription.create({
@@ -97,17 +82,24 @@ export async function POST(request: Request) {
         },
       });
 
-      const period = await prisma.subscriptionPeriod.create({
-        data: {
-          subscriptionId: subscription.id,
-          year: now.getFullYear(),
-          month: now.getMonth() + 1,
-          status: "PENDING",
-          totalAmount,
-        },
-      });
+      // Period 생성 + 주문 구독 연결을 병렬로
+      const [period] = await Promise.all([
+        prisma.subscriptionPeriod.create({
+          data: {
+            subscriptionId: subscription.id,
+            year: now.getFullYear(),
+            month: now.getMonth() + 1,
+            status: "PENDING",
+            totalAmount,
+          },
+        }),
+        prisma.order.update({
+          where: { id: order.id },
+          data: { subscriptionId: subscription.id },
+        }),
+      ]);
 
-      // 날짜별 선택 저장 (유효한 상품만)
+      // 날짜별 선택 저장
       const selectionData = selections.flatMap((sel) =>
         sel.productIds.filter((pid) => productMap.has(pid)).map((pid) => ({
           subscriptionPeriodId: period.id,
@@ -120,22 +112,25 @@ export async function POST(request: Request) {
       if (selectionData.length > 0) {
         await prisma.subscriptionSelection.createMany({ data: selectionData });
       }
-
-      // 주문에 구독 연결
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { subscriptionId: subscription.id },
-      });
     }
 
-    return NextResponse.json({
-      orderId: order.id,
-      orderNo: order.orderNo,
-      totalAmount,
-      plan,
-    });
+    return NextResponse.json({ orderId: order.id, orderNo: order.orderNo, totalAmount, plan });
   } catch (err) {
     console.error("POST /api/subscribe error:", err);
     return NextResponse.json({ error: "주문 생성 실패" }, { status: 500 });
+  }
+}
+
+// 로그인 유저 ID 확인, 없으면 guest
+async function resolveUserId(prisma: { user: { findUnique: (args: { where: { id: string }; select: { id: boolean } }) => Promise<{ id: string } | null> } }): Promise<string> {
+  try {
+    const { auth } = await import("../../../auth");
+    const session = await auth();
+    const sessionUserId = (session?.user as { id?: string })?.id;
+    if (!sessionUserId) return "guest";
+    const userExists = await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true } });
+    return userExists ? sessionUserId : "guest";
+  } catch {
+    return "guest";
   }
 }
