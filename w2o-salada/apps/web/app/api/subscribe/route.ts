@@ -48,6 +48,13 @@ export async function POST(request: Request) {
     const count = await prisma.order.count({ where: { orderNo: { startsWith: `W2O-${today}` } } });
     const orderNo = `W2O-${today}-${String(count + 1).padStart(4, "0")}`;
 
+    // 유효한 상품만 필터링
+    const validProductIds = allProductIds.filter((pid) => productMap.has(pid));
+
+    if (validProductIds.length === 0) {
+      return NextResponse.json({ error: "유효한 상품이 없습니다." }, { status: 400 });
+    }
+
     // 주문 생성
     const order = await prisma.order.create({
       data: {
@@ -58,7 +65,7 @@ export async function POST(request: Request) {
         totalAmount,
         deliveryFee: 0,
         items: {
-          create: allProductIds.map((pid) => {
+          create: validProductIds.map((pid) => {
             const product = productMap.get(pid)!;
             const unitPrice = plan === "trial" ? (product.originalPrice || product.price) : product.price;
             return {
@@ -95,9 +102,9 @@ export async function POST(request: Request) {
         },
       });
 
-      // 날짜별 선택 저장
+      // 날짜별 선택 저장 (유효한 상품만)
       const selectionData = selections.flatMap((sel) =>
-        sel.productIds.map((pid) => ({
+        sel.productIds.filter((pid) => productMap.has(pid)).map((pid) => ({
           subscriptionPeriodId: period.id,
           deliveryDate: new Date(sel.date),
           productId: pid,
@@ -124,7 +131,6 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error("POST /api/subscribe error:", err);
-    const message = err instanceof Error ? err.message : "알 수 없는 오류";
-    return NextResponse.json({ error: "주문 생성 실패", detail: message }, { status: 500 });
+    return NextResponse.json({ error: "주문 생성 실패" }, { status: 500 });
   }
 }
