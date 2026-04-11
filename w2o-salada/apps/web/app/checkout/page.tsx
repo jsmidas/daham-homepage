@@ -146,7 +146,14 @@ export default function CheckoutPage() {
       }),
     });
     const order = await orderRes.json();
-    if (!orderRes.ok) { alert("주문 생성에 실패했습니다."); setLoading(false); return; }
+    if (!orderRes.ok) {
+      alert(order?.message ?? order?.error ?? "주문 생성에 실패했습니다.");
+      setLoading(false);
+      return;
+    }
+
+    // 서버가 계산한 금액을 사용 (위변조 방지)
+    const payAmount: number = order.totalAmount ?? finalTotal;
 
     const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
     if (!TOSS_CLIENT_KEY) { alert("결제 키가 설정되지 않았습니다."); setLoading(false); return; }
@@ -160,7 +167,7 @@ export default function CheckoutPage() {
 
       await payment.requestPayment({
         method: "CARD",
-        amount: { value: finalTotal, currency: "KRW" },
+        amount: { value: payAmount, currency: "KRW" },
         orderId: order.orderNo,
         orderName,
         customerName: address.name || session?.user?.name || "고객",

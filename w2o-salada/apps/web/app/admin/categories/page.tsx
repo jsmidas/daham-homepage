@@ -10,6 +10,7 @@ type Category = {
   icon: string | null;
   color: string | null;
   isActive: boolean;
+  isOption: boolean;
   _count?: { products: number };
 };
 
@@ -27,6 +28,7 @@ type FormState = {
   icon: string;
   color: string;
   isActive: boolean;
+  isOption: boolean;
 };
 
 const emptyForm: FormState = {
@@ -36,6 +38,7 @@ const emptyForm: FormState = {
   icon: "lunch_dining",
   color: "#1D9E75",
   isActive: true,
+  isOption: false,
 };
 
 export default function CategoriesPage() {
@@ -77,6 +80,7 @@ export default function CategoriesPage() {
       icon: cat.icon ?? "lunch_dining",
       color: cat.color ?? "#1D9E75",
       isActive: cat.isActive,
+      isOption: cat.isOption,
     });
     setAdding(true);
   };
@@ -167,6 +171,24 @@ export default function CategoriesPage() {
             </div>
           </div>
 
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.isOption}
+                onChange={(e) => setForm({ ...form, isOption: e.target.checked })}
+                className="w-4 h-4 mt-0.5"
+              />
+              <div>
+                <div className="text-sm font-bold text-amber-900">옵션 카테고리로 설정</div>
+                <div className="text-xs text-amber-700 mt-0.5">
+                  체크 시 이 카테고리의 상품은 <b>최소 주문액 계산에서 제외</b>됩니다.
+                  마진이 작은 음료·유산균 등에 사용하세요. (본품 = 샐러드·간편식·반찬)
+                </div>
+              </div>
+            </label>
+          </div>
+
           <div>
             <label className="text-sm font-medium text-gray-600 block mb-2">아이콘</label>
             <div className="flex flex-wrap gap-2 mb-2">
@@ -255,6 +277,7 @@ export default function CategoriesPage() {
               <th className="text-center px-5 py-3 text-sm font-medium text-gray-500 w-16">순서</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">카테고리</th>
               <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">슬러그</th>
+              <th className="text-center px-5 py-3 text-sm font-medium text-gray-500">유형</th>
               <th className="text-center px-5 py-3 text-sm font-medium text-gray-500">상품 수</th>
               <th className="text-center px-5 py-3 text-sm font-medium text-gray-500">공개</th>
               <th className="text-center px-5 py-3 text-sm font-medium text-gray-500">관리</th>
@@ -262,9 +285,9 @@ export default function CategoriesPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">로딩 중...</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-gray-400">로딩 중...</td></tr>
             ) : categories.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">카테고리가 없습니다.</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-gray-400">카테고리가 없습니다.</td></tr>
             ) : (
               categories.map((cat) => (
                 <tr key={cat.id} className="border-b last:border-0 hover:bg-gray-50">
@@ -279,6 +302,13 @@ export default function CategoriesPage() {
                     </div>
                   </td>
                   <td className="px-5 py-4 text-sm text-gray-500 font-mono">{cat.slug}</td>
+                  <td className="px-5 py-4 text-center">
+                    {cat.isOption ? (
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold">옵션</span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-semibold">본품</span>
+                    )}
+                  </td>
                   <td className="px-5 py-4 text-center text-sm text-gray-600">{cat._count?.products ?? "-"}</td>
                   <td className="px-5 py-4 text-center">
                     <button

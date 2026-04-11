@@ -16,6 +16,39 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "토스 시크릿 키가 설정되지 않았습니다." }, { status: 500 });
     }
 
+    // ── 금액 위변조 검증 ──
+    // 서버에 저장된 주문 금액과 클라이언트가 결제 요청한 금액이 일치해야 함
+    try {
+      const { prisma } = await import("@repo/db");
+      const existing = await prisma.order.findUnique({
+        where: { orderNo: orderId },
+        select: { totalAmount: true, status: true },
+      });
+      if (!existing) {
+        return NextResponse.json({ error: "존재하지 않는 주문입니다." }, { status: 404 });
+      }
+      if (existing.status !== "PENDING") {
+        return NextResponse.json({ error: "이미 처리된 주문입니다." }, { status: 400 });
+      }
+      if (existing.totalAmount !== Number(amount)) {
+        await prisma.order.update({
+          where: { orderNo: orderId },
+          data: { status: "FAILED" },
+        });
+        return NextResponse.json(
+          {
+            error: "결제 금액이 주문 금액과 일치하지 않습니다.",
+            expected: existing.totalAmount,
+            received: Number(amount),
+          },
+          { status: 400 },
+        );
+      }
+    } catch (err) {
+      console.error("주문 금액 검증 실패:", err);
+      return NextResponse.json({ error: "주문 확인에 실패했습니다." }, { status: 500 });
+    }
+
     // 토스페이먼츠 결제 승인 API 호출
     const tossResponse = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
       method: "POST",

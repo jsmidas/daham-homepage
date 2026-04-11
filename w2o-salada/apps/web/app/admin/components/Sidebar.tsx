@@ -4,23 +4,53 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
-const menuItems = [
-  { href: "/admin/dashboard", icon: "dashboard", label: "대시보드" },
-  { href: "/admin/orders", icon: "receipt_long", label: "주문 관리" },
-  { href: "/admin/products", icon: "inventory_2", label: "상품 관리" },
-  { href: "/admin/pricing", icon: "sell", label: "통합 가격 설정" },
-  { href: "/admin/delivery-calendar", icon: "calendar_month", label: "배송 캘린더" },
-  { href: "/admin/subscribe-settings", icon: "tune", label: "구독 설정" },
-  { href: "/admin/categories", icon: "category", label: "카테고리" },
-  { href: "/admin/pages", icon: "article", label: "상세페이지" },
-  { href: "/admin/subscriptions", icon: "autorenew", label: "구독 관리" },
-  { href: "/admin/delivery", icon: "local_shipping", label: "배송 관리" },
-  { href: "/admin/members", icon: "people", label: "회원 관리" },
-  { href: "/admin/reviews", icon: "rate_review", label: "리뷰 관리" },
-  { href: "/admin/notifications", icon: "notifications", label: "알림톡" },
-  { href: "/admin/stats", icon: "bar_chart", label: "통계" },
-  { href: "/admin/sidebar", icon: "view_sidebar", label: "사이드바" },
-  { href: "/admin/settings", icon: "settings", label: "설정" },
+const menuGroups: { title: string; items: { href: string; icon: string; label: string }[] }[] = [
+  {
+    title: "운영",
+    items: [
+      { href: "/admin/dashboard", icon: "dashboard", label: "대시보드" },
+      { href: "/admin/stats", icon: "bar_chart", label: "통계" },
+    ],
+  },
+  {
+    title: "주문 · 배송",
+    items: [
+      { href: "/admin/orders", icon: "receipt_long", label: "주문 관리" },
+      { href: "/admin/delivery", icon: "local_shipping", label: "배송 관리" },
+      { href: "/admin/delivery-calendar", icon: "calendar_month", label: "배송 캘린더" },
+    ],
+  },
+  {
+    title: "상품",
+    items: [
+      { href: "/admin/products", icon: "inventory_2", label: "상품 관리" },
+      { href: "/admin/categories", icon: "category", label: "카테고리" },
+      { href: "/admin/pages", icon: "article", label: "상세페이지" },
+      { href: "/admin/pricing", icon: "sell", label: "통합 가격 설정" },
+    ],
+  },
+  {
+    title: "구독",
+    items: [
+      { href: "/admin/subscriptions", icon: "autorenew", label: "구독 관리" },
+      { href: "/admin/subscribe-settings", icon: "tune", label: "구독 설정" },
+    ],
+  },
+  {
+    title: "고객",
+    items: [
+      { href: "/admin/members", icon: "people", label: "회원 관리" },
+      { href: "/admin/reviews", icon: "rate_review", label: "리뷰 관리" },
+      { href: "/admin/notifications", icon: "notifications", label: "알림톡" },
+    ],
+  },
+  {
+    title: "시스템",
+    items: [
+      { href: "/admin/sidebar", icon: "view_sidebar", label: "사이드바" },
+      { href: "/admin/settings", icon: "settings", label: "설정" },
+    ],
+  },
 ];
 
 export default function Sidebar() {
@@ -41,24 +71,31 @@ export default function Sidebar() {
       </div>
 
       {/* 메뉴 */}
-      <nav className="flex-1 py-4">
-        {menuItems.map((item) => {
-          const active = pathname?.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-5 py-3 text-sm transition ${
-                active
-                  ? "bg-[#1D9E75]/10 text-[#1D9E75] border-r-2 border-[#1D9E75]"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              <span className="material-symbols-outlined text-xl">{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 py-3 overflow-y-auto">
+        {menuGroups.map((group, gi) => (
+          <div key={group.title} className={gi === 0 ? "" : "mt-3"}>
+            <div className="px-5 pt-2 pb-1 text-[10px] font-bold tracking-wider text-white/30 uppercase">
+              {group.title}
+            </div>
+            {group.items.map((item) => {
+              const active = pathname?.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-5 py-1.5 text-sm transition ${
+                    active
+                      ? "bg-[#1D9E75]/10 text-[#1D9E75] border-r-2 border-[#1D9E75]"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* 하단 - 사용자 정보 + 로그아웃 */}

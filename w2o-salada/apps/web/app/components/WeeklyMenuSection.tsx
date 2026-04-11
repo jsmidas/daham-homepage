@@ -209,7 +209,7 @@ export default function WeeklyMenuSection() {
 
         <div className="text-center mt-10 space-y-3">
           <p className="text-[#7aaa90] text-xs">* 식단은 재료 수급에 따라 변경될 수 있습니다</p>
-          <Link href="/subscribe?plan=subscription" className="inline-block px-8 py-3 bg-[#1D9E75] text-white rounded-full font-semibold hover:bg-[#167A5B] hover:shadow-lg hover:shadow-[#1D9E75]/30 hover:-translate-y-0.5 transition-all duration-300">
+          <Link href="/subscribe/slot" className="inline-block px-8 py-3 bg-[#1D9E75] text-white rounded-full font-semibold hover:bg-[#167A5B] hover:shadow-lg hover:shadow-[#1D9E75]/30 hover:-translate-y-0.5 transition-all duration-300">
             이 식단으로 구독 시작하기
           </Link>
         </div>

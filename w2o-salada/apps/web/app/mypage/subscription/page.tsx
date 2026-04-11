@@ -91,7 +91,7 @@ export default function SubscriptionPage() {
             <span className="material-symbols-outlined text-5xl text-[#1D9E75]/15 block mb-3">autorenew</span>
             <p className="text-[#4a7a5e] mb-2">진행 중인 구독이 없습니다.</p>
             <p className="text-[#7aaa90] text-xs mb-5">정기구독으로 매주 신선한 샐러드를 받아보세요.</p>
-            <Link href="/subscribe" className="inline-block px-6 py-2.5 bg-[#1D9E75] text-white rounded-full font-semibold text-sm hover:bg-[#167A5B] transition">
+            <Link href="/subscribe/slot" className="inline-block px-6 py-2.5 bg-[#1D9E75] text-white rounded-full font-semibold text-sm hover:bg-[#167A5B] transition">
               구독 시작하기
             </Link>
           </div>

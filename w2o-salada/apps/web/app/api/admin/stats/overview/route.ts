@@ -9,52 +9,39 @@ export async function GET() {
   try {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [todayRevenue, todayOrders, activeSubscribers, monthlyRevenue] =
-      await Promise.all([
-        // Today's revenue
-        prisma.payment
-          .aggregate({
-            where: {
-              status: "DONE",
-              createdAt: { gte: todayStart },
-            },
-            _sum: { amount: true },
-          })
-          .then((r: { _sum: { amount: number | null } }) => r._sum.amount ?? 0),
-
-        // Today's order count
-        prisma.order.count({
-          where: {
-            createdAt: { gte: todayStart },
-          },
-        }),
-
-        // Active subscribers
-        prisma.subscription.count({
-          where: {
-            status: "ACTIVE",
-          },
-        }),
-
-        // Monthly revenue
-        prisma.payment
-          .aggregate({
-            where: {
-              status: "DONE",
-              createdAt: { gte: monthStart },
-            },
-            _sum: { amount: true },
-          })
-          .then((r: { _sum: { amount: number | null } }) => r._sum.amount ?? 0),
-      ]);
+    const [
+      todayOrders,
+      todayRevenueAgg,
+      pendingOrders,
+      preparingOrders,
+      shippingOrders,
+      totalProducts,
+      totalMembers,
+      activeSubscriptions,
+    ] = await Promise.all([
+      prisma.order.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.payment.aggregate({
+        where: { status: "DONE", createdAt: { gte: todayStart } },
+        _sum: { amount: true },
+      }),
+      prisma.order.count({ where: { status: "PENDING" } }),
+      prisma.order.count({ where: { status: "PREPARING" } }),
+      prisma.order.count({ where: { status: "SHIPPING" } }),
+      prisma.product.count({ where: { isActive: true } }),
+      prisma.user.count({ where: { role: "CUSTOMER" } }),
+      prisma.subscription.count({ where: { status: "ACTIVE" } }),
+    ]);
 
     return NextResponse.json({
-      todayRevenue,
       todayOrders,
-      activeSubscribers,
-      monthlyRevenue,
+      todayRevenue: todayRevenueAgg._sum.amount ?? 0,
+      pendingOrders,
+      preparingOrders,
+      shippingOrders,
+      totalProducts,
+      totalMembers,
+      activeSubscriptions,
     });
   } catch (err) {
     console.error("GET /api/admin/stats/overview error:", err);

@@ -194,7 +194,8 @@ model Subscription {
   planType          PlanType?          // deprecated, optional로 유지
   frequency         Frequency?         // deprecated, optional로 유지
   selectionMode     SelectionMode      @default(MANUAL)
-  itemsPerDelivery  Int                @default(2)  // 배송당 수량
+  itemsPerDelivery  Int                @default(2)  // 배송당 수량 (슬롯 합과 동기화)
+  slots             Json?              // 카테고리별 슬롯 { "salad": 2, "simple": 1, ... } — key=Category.slug
   status            SubscriptionStatus @default(PENDING)
   billingKey        String?            // 토스 빌링키 (암호화)
   nextBillingDate   DateTime?

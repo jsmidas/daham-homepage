@@ -157,9 +157,10 @@ export default function PricingPage() {
         setDrafts(newDrafts);
       }
 
+      const globalChanged = minDirty || trialDirty;
       setMinDirty(false);
       setTrialDirty(false);
-      setMessage(`✅ 저장 완료 (상품 ${dirtyProducts.length}개${minDirty || trialDirty ? " + 글로벌 설정" : ""})`);
+      setMessage(`✅ 저장 완료 (상품 ${dirtyProducts.length}개${globalChanged ? " + 글로벌 설정" : ""})`);
       setTimeout(() => setMessage(""), 4000);
     } catch (err) {
       console.error(err);

@@ -26,14 +26,30 @@ const config: NextAuthConfig = {
         const usernameStr = credentials.username as string;
         const passwordStr = credentials.password as string;
 
-        // 개발/운영 관리자 데모 계정
+        // 개발/운영 관리자 데모 계정 (DB에 upsert 해서 실제 id 반환)
         if (usernameStr === "admin" && passwordStr === "admin1234") {
-          return {
-            id: "admin-001",
-            email: "admin@w2o.kr",
-            name: "관리자",
-            role: "ADMIN",
-          };
+          try {
+            const prisma = await getPrisma();
+            const admin = await prisma.user.upsert({
+              where: { email: "admin@w2o.kr" },
+              update: { role: "ADMIN", name: "관리자" },
+              create: {
+                username: "admin",
+                email: "admin@w2o.kr",
+                name: "관리자",
+                role: "ADMIN",
+              },
+            });
+            return {
+              id: admin.id,
+              email: admin.email,
+              name: admin.name,
+              role: admin.role,
+            };
+          } catch (err) {
+            console.error("admin 계정 upsert 실패:", err);
+            return null;
+          }
         }
 
         try {

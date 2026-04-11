@@ -22,6 +22,7 @@ function SuccessContent() {
     const customerKey = searchParams.get("customerKey");
     const billingAmount = searchParams.get("amount");
     const billingOrderNo = searchParams.get("orderNo");
+    const subscriptionId = searchParams.get("subscriptionId");
 
     // 빌링키 발급 성공 → 첫 결제 처리
     if (billing === "true" && authKey && customerKey) {
@@ -36,6 +37,7 @@ function SuccessContent() {
               orderId,
               amount: Number(billingAmount),
               orderNo: billingOrderNo,
+              subscriptionId,
             }),
           });
           const data = await res.json();

@@ -112,7 +112,7 @@ export default function Header() {
                 로그아웃
               </button>
               <Link
-                href="/subscribe?plan=subscription"
+                href="/subscribe/slot"
                 className="px-5 py-2 bg-brand-green text-white text-sm font-semibold rounded-full hover:bg-brand-mint transition"
               >
                 구독 신청
@@ -127,7 +127,7 @@ export default function Header() {
                 로그인
               </Link>
               <Link
-                href="/subscribe?plan=subscription"
+                href="/subscribe/slot"
                 className="px-5 py-2 bg-brand-green text-white text-sm font-semibold rounded-full hover:bg-brand-mint transition"
               >
                 구독 신청
@@ -190,7 +190,7 @@ export default function Header() {
               )}
             </Link>
             <Link
-              href="/subscribe?plan=subscription"
+              href="/subscribe/slot"
               className="mt-2 px-6 py-3 bg-brand-green text-white text-center rounded-full font-semibold"
               onClick={() => setMobileOpen(false)}
             >

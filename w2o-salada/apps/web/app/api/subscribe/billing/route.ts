@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   if (error) return error;
 
   try {
-    const { authKey, customerKey, orderId, amount, orderNo } = await request.json();
+    const { authKey, customerKey, orderId, amount, orderNo, subscriptionId } = await request.json();
 
     if (!authKey || !customerKey) {
       return NextResponse.json({ error: "authKey, customerKey 필수" }, { status: 400 });
@@ -90,20 +90,32 @@ export async function POST(request: Request) {
         });
       }
 
-      // 구독 레코드 생성
-      await prisma.subscription.create({
-        data: {
-          userId,
-          planType: "REGULAR",
-          frequency: "BIWEEKLY",
-          status: "ACTIVE",
-          billingKey,
-          price: amount,
-          startedAt: new Date(),
-          nextBillingDate: getNextBillingDate(),
-          nextDeliveryDate: getNextDeliveryDate(),
-        },
-      });
+      // 구독 처리: subscriptionId 있으면 기존 구독 활성화, 없으면 신규 생성 (레거시 호환)
+      if (subscriptionId) {
+        await prisma.subscription.update({
+          where: { id: subscriptionId },
+          data: {
+            status: "ACTIVE",
+            billingKey,
+            startedAt: new Date(),
+            nextBillingDate: getNextBillingDate(),
+          },
+        });
+      } else {
+        await prisma.subscription.create({
+          data: {
+            userId,
+            planType: "REGULAR",
+            frequency: "BIWEEKLY",
+            status: "ACTIVE",
+            billingKey,
+            price: amount,
+            startedAt: new Date(),
+            nextBillingDate: getNextBillingDate(),
+            nextDeliveryDate: getNextDeliveryDate(),
+          },
+        });
+      }
     } catch (dbErr) {
       console.warn("DB 저장 실패 (결제는 완료됨):", dbErr);
     }

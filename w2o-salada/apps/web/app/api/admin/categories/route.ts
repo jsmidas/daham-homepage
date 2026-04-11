@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   if (error) return error;
 
   try {
-    const { name, slug, sortOrder, icon, color, isActive } = await request.json();
+    const { name, slug, sortOrder, icon, color, isActive, isOption } = await request.json();
     const category = await prisma.category.create({
       data: {
         name,
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
         icon: icon ?? null,
         color: color ?? null,
         isActive: isActive ?? true,
+        isOption: isOption ?? false,
       },
     });
     return NextResponse.json(category, { status: 201 });

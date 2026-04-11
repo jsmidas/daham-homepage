@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "../../lib/auth-guard";
 
 const DEFAULT_MIN_ORDER_AMOUNT = 11000;
+const FREE_SHIPPING_THRESHOLD = 15000;
+const DELIVERY_FEE = 3000;
 
 function generateOrderNo() {
   const now = new Date();
@@ -22,73 +24,92 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "주문 항목이 필요합니다." }, { status: 400 });
     }
 
-    // ── 최소 주문액 검증 ──
-    // 본품(isOption=false) 합계가 설정값 이상이어야 주문 성립
-    // 옵션 카테고리(음료·유산균 등)는 마진이 작아 최소액 계산에서 제외
-    try {
-      const { prisma } = await import("@repo/db");
-      const [setting, products] = await Promise.all([
-        prisma.setting.findUnique({ where: { key: "minOrderAmount" } }),
-        prisma.product.findMany({
-          where: { id: { in: items.map((i) => i.productId).filter(Boolean) } },
-          include: { category: { select: { isOption: true } } },
-        }),
-      ]);
-      const minAmount = setting ? Number(setting.value) : DEFAULT_MIN_ORDER_AMOUNT;
-      const productMap = new Map(products.map((p) => [p.id, p]));
+    const { prisma } = await import("@repo/db");
 
-      let baseTotal = 0;
-      for (const it of items) {
-        const p = productMap.get(it.productId);
-        if (!p) continue;
-        if (p.category?.isOption) continue; // 옵션 카테고리 제외
-        baseTotal += p.price * (it.quantity ?? 1);
-      }
+    // 상품 정보 + 카테고리 옵션 여부 로드
+    const productIds = items.map((i) => i.productId).filter(Boolean);
+    const [setting, products] = await Promise.all([
+      prisma.setting.findUnique({ where: { key: "minOrderAmount" } }),
+      prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: { category: { select: { isOption: true } } },
+      }),
+    ]);
+    const minAmount = setting ? Number(setting.value) : DEFAULT_MIN_ORDER_AMOUNT;
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
-      if (baseTotal < minAmount) {
+    // 서버 측 금액 계산 (가격 위변조 방지)
+    let baseTotal = 0; // 본품 합계 (최소 주문액 기준)
+    let itemsTotal = 0; // 전체 상품 합계
+    const orderItemData: { productId: string; quantity: number; unitPrice: number; totalPrice: number }[] = [];
+
+    for (const it of items) {
+      const p = productMap.get(it.productId);
+      if (!p) {
         return NextResponse.json(
-          {
-            error: `최소 주문액 미달`,
-            message: `본품(샐러드·간편식·반찬) 합계가 ${minAmount.toLocaleString()}원 이상이어야 주문 가능합니다. (현재 ${baseTotal.toLocaleString()}원)`,
-            baseTotal,
-            minAmount,
-            shortfall: minAmount - baseTotal,
-          },
+          { error: `존재하지 않는 상품: ${it.productId}` },
           { status: 400 },
         );
       }
-    } catch (err) {
-      // DB 오류 시 검증 스킵하고 경고만 (개발 중 DB 미연결 상황 허용)
-      console.warn("minOrderAmount 검증 스킵:", err);
+      const qty = Math.max(1, it.quantity ?? 1);
+      const line = p.price * qty;
+      itemsTotal += line;
+      if (!p.category?.isOption) baseTotal += line;
+      orderItemData.push({
+        productId: p.id,
+        quantity: qty,
+        unitPrice: p.price,
+        totalPrice: line,
+      });
+    }
+
+    if (baseTotal < minAmount) {
+      return NextResponse.json(
+        {
+          error: "최소 주문액 미달",
+          message: `본품(샐러드·간편식·반찬) 합계가 ${minAmount.toLocaleString()}원 이상이어야 주문 가능합니다. (현재 ${baseTotal.toLocaleString()}원)`,
+          baseTotal,
+          minAmount,
+          shortfall: minAmount - baseTotal,
+        },
+        { status: 400 },
+      );
+    }
+
+    const deliveryFee = itemsTotal >= FREE_SHIPPING_THRESHOLD ? 0 : DELIVERY_FEE;
+    const totalAmount = itemsTotal + deliveryFee;
+
+    // userId 확인 (없으면 guest 폴백)
+    let userId = body.userId ?? "guest";
+    if (userId !== "guest") {
+      const userExists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+      if (!userExists) userId = "guest";
     }
 
     const orderNo = generateOrderNo();
+    const order = await prisma.order.create({
+      data: {
+        orderNo,
+        userId,
+        type: "SINGLE",
+        status: "PENDING",
+        totalAmount,
+        deliveryFee,
+        discountAmount: 0,
+        items: { create: orderItemData },
+      },
+    });
 
-    // DB 저장 시도
-    try {
-      const { prisma } = await import("@repo/db");
-      // userId가 DB에 존재하는지 확인, 없으면 guest로 폴백
-      let userId = body.userId ?? "guest";
-      if (userId !== "guest") {
-        const userExists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-        if (!userExists) userId = "guest";
-      }
-      const order = await prisma.order.create({
-        data: {
-          orderNo,
-          userId,
-          type: "SINGLE",
-          status: "PENDING",
-          totalAmount: 0,
-          deliveryFee: 0,
-          discountAmount: 0,
-        },
-      });
-      return NextResponse.json({ id: order.id, orderNo: order.orderNo }, { status: 201 });
-    } catch {
-      // DB 없으면 임시 주문 정보 반환
-      return NextResponse.json({ id: orderNo, orderNo }, { status: 201 });
-    }
+    return NextResponse.json(
+      {
+        id: order.id,
+        orderNo: order.orderNo,
+        itemsTotal,
+        deliveryFee,
+        totalAmount,
+      },
+      { status: 201 },
+    );
   } catch (err) {
     console.error("POST /api/orders error:", err);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });
