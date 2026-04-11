@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "../../lib/auth-guard";
 
+const DEFAULT_MIN_ORDER_AMOUNT = 11000;
+
 function generateOrderNo() {
   const now = new Date();
   const date = now.toISOString().slice(0, 10).replace(/-/g, "");
@@ -8,14 +10,56 @@ function generateOrderNo() {
   return `W2O-${date}-${rand}`;
 }
 
+type IncomingItem = { productId: string; quantity?: number };
+
 // POST: 주문 생성
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items } = body;
+    const items: IncomingItem[] = body.items ?? [];
 
-    if (!items?.length) {
+    if (!items.length) {
       return NextResponse.json({ error: "주문 항목이 필요합니다." }, { status: 400 });
+    }
+
+    // ── 최소 주문액 검증 ──
+    // 본품(isOption=false) 합계가 설정값 이상이어야 주문 성립
+    // 옵션 카테고리(음료·유산균 등)는 마진이 작아 최소액 계산에서 제외
+    try {
+      const { prisma } = await import("@repo/db");
+      const [setting, products] = await Promise.all([
+        prisma.setting.findUnique({ where: { key: "minOrderAmount" } }),
+        prisma.product.findMany({
+          where: { id: { in: items.map((i) => i.productId).filter(Boolean) } },
+          include: { category: { select: { isOption: true } } },
+        }),
+      ]);
+      const minAmount = setting ? Number(setting.value) : DEFAULT_MIN_ORDER_AMOUNT;
+      const productMap = new Map(products.map((p) => [p.id, p]));
+
+      let baseTotal = 0;
+      for (const it of items) {
+        const p = productMap.get(it.productId);
+        if (!p) continue;
+        if (p.category?.isOption) continue; // 옵션 카테고리 제외
+        baseTotal += p.price * (it.quantity ?? 1);
+      }
+
+      if (baseTotal < minAmount) {
+        return NextResponse.json(
+          {
+            error: `최소 주문액 미달`,
+            message: `본품(샐러드·간편식·반찬) 합계가 ${minAmount.toLocaleString()}원 이상이어야 주문 가능합니다. (현재 ${baseTotal.toLocaleString()}원)`,
+            baseTotal,
+            minAmount,
+            shortfall: minAmount - baseTotal,
+          },
+          { status: 400 },
+        );
+      }
+    } catch (err) {
+      // DB 오류 시 검증 스킵하고 경고만 (개발 중 DB 미연결 상황 허용)
+      console.warn("minOrderAmount 검증 스킵:", err);
     }
 
     const orderNo = generateOrderNo();

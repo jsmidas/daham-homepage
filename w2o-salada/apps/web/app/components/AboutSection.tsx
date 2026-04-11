@@ -3,9 +3,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 
 const TYPING_TEXTS = [
-  "맵시를 다함 !",
-  "새벽에 도착합니다.",
-  "새벽의 신선함을 깨웁니다.",
+  "우리 집 식탁을 차립니다.",
+  "샐러드·간편식·반찬, 한 번에.",
+  "매주 두 번, 새벽에 도착합니다.",
 ];
 
 function useTypingEffect(texts: string[], speed = 100, pause = 2000) {
@@ -157,8 +157,8 @@ function FeatureCard({ icon, title, desc, stat, statLabel, delay }: {
 }
 
 const features = [
-  { icon: "eco", title: "100% 신선 재료", desc: "매일 아침 산지에서 직송한 신선한 채소와 과일로 만듭니다.", stat: 100, statLabel: "%" },
-  { icon: "restaurant_menu", title: "최다 제품구성", desc: "샐러드·그레인볼·프로틴 등 다양한 메뉴를 매일 새롭게 구성합니다.", stat: 12, statLabel: "종+" },
+  { icon: "eco", title: "100% 신선 재료", desc: "매일 아침 산지에서 직송한 채소·과일·국거리로 만듭니다.", stat: 100, statLabel: "%" },
+  { icon: "restaurant_menu", title: "가정식 풀라인업", desc: "샐러드·간편식·반찬·국까지 한 번에 우리 집 식탁으로.", stat: 4, statLabel: "종 카테고리" },
   { icon: "dark_mode", title: "새벽 배송", desc: "밤사이 준비해서 아침 6시 전 문 앞에 도착합니다.", stat: 6, statLabel: "시 전 도착" },
   { icon: "savings", title: "구독 시 할인", desc: "정가 7,500원 → 구독 5,900원! 개당 1,600원 할인됩니다.", stat: 21, statLabel: "% 할인" },
 ];
@@ -174,14 +174,23 @@ export default function AboutSection() {
           <span className="text-[#1D9E75] text-xs tracking-[0.3em] uppercase font-medium">
             WHY W2O SALADA
           </span>
-          <p className="text-[#EF9F27] text-lg mt-4 mb-2">Wake up 2 go Out !</p>
+          <p className="text-[#EF9F27] text-lg mt-4 mb-2">Weekly 2 Order · 매주 두 번, 우리 집 식탁으로</p>
           <h2 className="text-4xl md:text-5xl font-bold text-[#0A1A0F] min-h-[1.3em]">
             {display}
             <span className={`text-[#1D9E75] transition-opacity ${showCursor ? "opacity-100" : "opacity-0"}`}>
               |
             </span>
           </h2>
-          <p className="text-[#2d5a3f] mt-4">신선하게 만든 샐러드·간편식을 새벽에 배달합니다.</p>
+          <p className="text-[#2d5a3f] mt-4">
+            샐러드·간편식·반찬까지, 가정의 한 끼를 매일 새벽 문 앞으로.
+          </p>
+          <div className="mt-6 inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/70 border border-[#1D9E75]/20 backdrop-blur-sm">
+            <span className="text-[#1D9E75] font-black text-sm tracking-widest">W2O</span>
+            <span className="w-px h-4 bg-[#1D9E75]/30" />
+            <span className="text-[#2d5a3f] text-sm">
+              <b className="text-[#1D9E75]">W</b>eekly <b className="text-[#1D9E75]">2</b> <b className="text-[#1D9E75]">O</b>rder
+            </span>
+          </div>
           <div className="mt-8 flex justify-center gap-4 flex-wrap">
             <a href="/subscribe?plan=subscription" className="px-8 py-3 bg-[#1D9E75] text-white rounded-full font-semibold hover:bg-[#167A5B] hover:shadow-lg hover:shadow-[#1D9E75]/30 hover:-translate-y-0.5 transition-all duration-300">
               구독 신청하기

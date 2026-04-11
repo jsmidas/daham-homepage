@@ -3,15 +3,15 @@ import Link from "next/link";
 const plans = [
   {
     name: "맛보기",
-    desc: "처음이라면 한 번 체험해보세요",
+    desc: "처음이라면 한 끼 체험해보세요",
     highlight: "1회 체험",
-    composition: "샐러드 × 2개",
+    composition: "오늘의 메뉴 × 2개 (카테고리 자유)",
     originalPrice: "15,000원",
     priceLabel: "13,800원",
-    priceDetail: "6,900원 × 2개",
+    priceDetail: "행사가 6,900원 × 2개",
     features: [
-      "오늘의 샐러드 2개 배송",
-      "새벽 6시 전 도착",
+      "샐러드·간편식·반찬 중 자유 선택",
+      "새벽 6시 전 문 앞 도착",
       "가입 없이 간편 주문",
     ],
     popular: false,
@@ -22,15 +22,15 @@ const plans = [
   },
   {
     name: "정기구독",
-    desc: "꾸준한 건강 관리의 시작",
-    highlight: "주 2회 배송",
-    composition: "샐러드 × 2개 × 주 2회 × 4주",
+    desc: "매주 두 번, 우리 집 식탁을 차립니다",
+    highlight: "Weekly 2 Order",
+    composition: "메뉴 × 2개 × 주 2회(화·목) × 4주",
     originalPrice: "120,000원",
     priceLabel: "월 94,400원",
     priceDetail: "5,900원 × 2개 × 주 2회 × 4주",
     features: [
-      "매 배송 셰프 엄선 샐러드 2개",
-      "새벽 6시 전 도착",
+      "매주 화·목 새벽 배송",
+      "샐러드·간편식·반찬 자유 조합",
       "개당 1,600원 할인 (21%↓)",
       "1개월 단위 자동 결제",
       "언제든 일시정지·해지 가능",
@@ -42,24 +42,24 @@ const plans = [
     color: "green" as const,
   },
   {
-    name: "혼합신청",
-    desc: "샐러드 + 간편식을 함께",
-    highlight: "자유 조합",
-    composition: "샐러드 + 간편식 × 주 2회 × 4주",
+    name: "패밀리",
+    desc: "2인 가정의 한 주를 준비합니다",
+    highlight: "가족 플랜",
+    composition: "메뉴 × 4개 × 주 2회 × 4주",
     originalPrice: null,
-    priceLabel: "메뉴에 따라 변동",
-    priceDetail: "선택한 조합에 따라 결제 금액 결정",
+    priceLabel: "메뉴 구성 따라 변동",
+    priceDetail: "반찬·국 포함 가능, 조합에 따라 결제액 변동",
     features: [
-      "샐러드·간편식 자유 조합",
-      "새벽 6시 전 도착",
-      "샐러드 구독 할인 동일 적용",
-      "간편식은 메뉴별 단가 적용",
+      "2인 기준 한 주 식탁 완성",
+      "반찬·국·간편식 포함 가능",
+      "구독 할인 동일 적용",
+      "매 배송마다 메뉴 자유 변경",
       "1개월 단위 자동 결제",
     ],
     popular: false,
     badge: "NEW",
     href: "/subscribe?plan=mixed",
-    cta: "혼합 신청하기",
+    cta: "패밀리 신청하기",
     color: "amber" as const,
   },
 ];
@@ -76,7 +76,7 @@ export default function SubscribeSection() {
             나에게 맞는 방법으로<br />시작하세요
           </h2>
           <p className="text-[#4a7a5e] mt-3 text-sm md:text-base">
-            매일 셰프가 엄선한 샐러드·간편식을 새벽에 배달합니다
+            <b className="text-[#1D9E75]">Weekly 2 Order</b> · 매주 두 번, 샐러드·간편식·반찬이 우리 집 식탁으로
           </p>
         </div>
 
@@ -143,10 +143,10 @@ export default function SubscribeSection() {
         <div className="mt-8 max-w-5xl mx-auto bg-white/60 backdrop-blur-sm rounded-xl border border-[#EF9F27]/20 p-5 flex items-start gap-4">
           <span className="material-symbols-outlined text-[#EF9F27] text-2xl shrink-0 mt-0.5">info</span>
           <div>
-            <p className="text-[#0A1A0F] font-semibold text-sm">간편식(샌드위치, 핫도그 등) 선택 시</p>
+            <p className="text-[#0A1A0F] font-semibold text-sm">간편식·반찬·국 선택 시</p>
             <p className="text-[#4a7a5e] text-sm mt-1">
-              간편식은 메뉴에 따라 단가가 다를 수 있으며, 선택한 메뉴 조합에 따라 결제 금액이 변동됩니다.
-              식단 선택 화면에서 정확한 금액을 확인하실 수 있습니다.
+              샐러드 외 카테고리(간편식·반찬·국 등)는 메뉴별 단가가 다를 수 있으며,
+              선택한 조합에 따라 결제 금액이 변동됩니다. 식단 선택 화면에서 정확한 금액을 확인하실 수 있습니다.
             </p>
           </div>
         </div>

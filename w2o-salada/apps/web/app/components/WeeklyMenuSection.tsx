@@ -12,6 +12,7 @@ type Category = {
   icon: string | null;
   color: string | null;
   isActive: boolean;
+  isOption?: boolean;
 };
 
 type Product = {
@@ -369,9 +370,10 @@ function MenuItemRow({ item }: { item: Product }) {
     addItem({
       productId: item.id,
       name: item.name,
-      price: item.originalPrice && item.originalPrice > item.price ? item.originalPrice : item.price,
+      price: item.price, // 상시 할인가 모델: 고객에게 항상 판매가(price)로 결제
       imageUrl: item.imageUrl,
       quantity: 1,
+      isOption: item.category?.isOption ?? false,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);

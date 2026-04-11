@@ -15,7 +15,7 @@ type Product = {
   tags: string | null;
   imageUrl: string | null;
   availableDays: string | null;
-  category: { name: string; slug: string };
+  category: { name: string; slug: string; isOption?: boolean };
 };
 
 export default function ProductDetailPage() {
@@ -170,9 +170,10 @@ export default function ProductDetailPage() {
                   addItem({
                     productId: product.id,
                     name: product.name,
-                    price: product.originalPrice && product.originalPrice > product.price ? product.originalPrice : product.price,
+                    price: product.price, // 상시 할인가 모델: 판매가(price)로 장바구니에 담음
                     imageUrl: product.imageUrl,
                     quantity: 1,
+                    isOption: product.category?.isOption ?? false,
                   });
                   setAdded(true);
                   setTimeout(() => setAdded(false), 2000);

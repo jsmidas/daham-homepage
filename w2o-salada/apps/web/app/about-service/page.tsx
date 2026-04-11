@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "서비스 소개서 - W2O SALADA",
-  description: "W2O SALADA 프리미엄 샐러드 새벽배송 서비스 소개서",
+  description: "W2O SALADA — Weekly 2 Order. 프리미엄 가정식 새벽배송 서비스 소개서",
 };
 
 export default function AboutServicePage() {
@@ -29,13 +29,21 @@ export default function AboutServicePage() {
         <Section number={1} title="서비스 개요">
           <p className="mb-4 leading-relaxed">
             <strong>W2O SALADA</strong>는 주식회사 다함푸드에서 운영하는{" "}
-            <strong>프리미엄 샐러드 새벽배송 서비스</strong>입니다.
+            <strong>프리미엄 가정식 새벽배송 서비스</strong>입니다.
+            샐러드로 시작해 간편식·반찬·국까지, 가정의 한 끼를 책임지는
+            주 2회 정기배송 브랜드입니다.
           </p>
-          <p className="mb-4 leading-relaxed">
-            브랜드 슬로건 <em>&ldquo;Wake up 2 go Out&rdquo;</em> &mdash;
-            일어나면 이미 준비된 건강한 하루를 지향하며, 매일 신선하게 조리된
-            샐러드를 고객의 문 앞까지 새벽에 배송합니다.
-          </p>
+          <div className="mb-4 rounded-lg border-l-4 border-green-600 bg-green-50 px-4 py-3">
+            <p className="text-sm font-semibold text-green-800">
+              브랜드 네이밍 — <strong>W2O = Weekly 2 Order</strong>
+            </p>
+            <p className="mt-1 text-sm text-green-700 leading-relaxed">
+              &ldquo;매주 두 번, 우리 집 식탁을 차립니다&rdquo; — 화요일과 목요일 새벽,
+              셰프가 차린 한 끼가 문 앞에 도착합니다. 기존 감성 슬로건{" "}
+              <em>&ldquo;Wake 2 go Out — 일어나면 이미 준비된 하루&rdquo;</em>는
+              브랜드의 원형으로 함께 이어집니다.
+            </p>
+          </div>
           <ul className="ml-5 list-disc space-y-2 text-gray-700">
             <li>
               <strong>주문 마감:</strong> PM 11:00
@@ -66,9 +74,10 @@ export default function AboutServicePage() {
             2-1. 메뉴 구성
           </h3>
           <p className="mb-4 leading-relaxed text-gray-700">
-            샐러드, 그레인볼, 프로틴, 주스/음료 등 <strong>30종 이상</strong>의
-            다양한 건강 메뉴를 제공합니다. 모든 메뉴는 HACCP 인증 시설에서
-            당일 조리하여 신선도를 보장합니다.
+            샐러드, 간편식, 반찬·국, 그레인볼, 프로틴, 주스/음료 등{" "}
+            <strong>30종 이상</strong>의 가정식 메뉴를 제공합니다. 모든 메뉴는
+            HACCP 인증 시설에서 당일 조리하여 신선도를 보장하며, 카테고리를
+            자유롭게 조합해 우리 집 식탁을 구성할 수 있습니다.
           </p>
 
           <h3 className="mb-3 text-base font-semibold text-gray-800">

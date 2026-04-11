@@ -55,7 +55,7 @@ function SubscribeContent() {
   const [saladCount, setSaladCount] = useState(2);
   const [mealCount, setMealCount] = useState(0);
   const itemsPerDelivery = saladCount + mealCount;
-  const [config, setConfig] = useState({ minItems: 2, maxItems: 10 });
+  const [config, setConfig] = useState({ minItems: 2, maxItems: 10, trialPrice: 6900 });
 
   // 약관 동의
   const [termsAgreed, setTermsAgreed] = useState(false);
@@ -86,6 +86,7 @@ function SubscribeContent() {
         setConfig({
           minItems: parseInt(data["subscribe.minItems"] || "2"),
           maxItems: parseInt(data["subscribe.maxItems"] || "5"),
+          trialPrice: parseInt(data["subscribe.trial.price"] || "6900"),
         });
       })
       .catch(() => {});
@@ -246,7 +247,8 @@ function SubscribeContent() {
       for (const pid of items) {
         const product = d.menuAssignments.find((m) => m.productId === pid)?.product;
         if (product) {
-          total += mode === "trial" ? (product.originalPrice || product.price) : product.price;
+          // 1회 체험은 행사가(trialPrice), 정기는 정기가(price)
+          total += mode === "trial" ? config.trialPrice : product.price;
         }
       }
     }
@@ -767,7 +769,7 @@ function SubscribeContent() {
                                 <span className="text-gray-400 text-xs line-through">{p.originalPrice.toLocaleString()}원</span>
                               )}
                               <span className="text-[#1D9E75] text-sm font-bold">
-                                {(mode === "trial" ? (p.originalPrice || p.price) : p.price).toLocaleString()}원
+                                {(mode === "trial" ? config.trialPrice : p.price).toLocaleString()}원
                               </span>
                             </div>
                           </div>

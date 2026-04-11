@@ -67,11 +67,11 @@ export default function MenuPage() {
             OUR MENU
           </span>
           <h1 className="text-3xl md:text-4xl font-bold text-[#0A1A0F] mt-3">
-            W2O SALADA의 메뉴를 소개합니다
+            우리 집 식탁 메뉴
           </h1>
           <p className="text-[#4a7a5e] mt-3 text-sm md:text-base max-w-xl mx-auto">
-            매일 셰프가 엄선한 샐러드와 간편식을 새벽에 배달합니다.
-            구독 시 배송일마다 원하는 조합을 자유롭게 선택할 수 있습니다.
+            매일 셰프가 차리는 한 끼 — 샐러드·간편식·반찬까지.
+            구독 시 매 배송일마다 원하는 조합을 자유롭게 선택할 수 있습니다.
           </p>
         </div>
 

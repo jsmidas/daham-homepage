@@ -1,7 +1,7 @@
 {
-  "name": "W2O SALADA - 샐러드 새벽배송",
+  "name": "W2O SALADA — 우리 집 새벽 식탁",
   "short_name": "W2O SALADA",
-  "description": "일어나면 이미 준비된 하루. 샐러드 새벽배송 서비스",
+  "description": "Weekly 2 Order. 매주 두 번, 샐러드·간편식·반찬이 새벽 문 앞으로 도착합니다.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

@@ -58,12 +58,13 @@ model Address {
 // ── 카테고리 ──
 model Category {
   id       String    @id @default(cuid())
-  name     String    // 샐러드, 그레인볼, 프로틴 등
+  name     String    // 샐러드, 간편식, 반찬 등
   slug     String    @unique
   sortOrder Int      @default(0)
   icon     String?   // material-symbols 아이콘 이름 (예: eco, lunch_dining)
   color    String?   // hex 색상 (예: #1D9E75)
   isActive Boolean   @default(true) // 공개 여부
+  isOption Boolean   @default(false) // true면 본품 아님 (최소 주문액 계산 제외) — 음료/유산균 등
   products Product[]
 
   @@map("categories")

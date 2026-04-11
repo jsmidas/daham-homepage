@@ -4,13 +4,33 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import useSWR from "swr";
 import { fetcher } from "../../lib/fetcher";
 
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string | null;
+  color: string | null;
+  sortOrder: number;
+};
+
 type Product = {
   id: string;
   name: string;
   price: number;
-  category: { name: string; slug: string };
+  category: Category;
   imageUrl: string | null;
 };
+
+// 카테고리 색상 매핑 (DB color 우선, 폴백)
+const CATEGORY_FALLBACK_COLOR = "#6b7280";
+function getCatColor(cat?: Pick<Category, "color">) {
+  return cat?.color || CATEGORY_FALLBACK_COLOR;
+}
+// 연한 배경색 (색상 + 알파)을 위한 유틸: color는 hex라 15% 투명도로 배경 구성
+function getCatBgStyle(cat?: Pick<Category, "color">): React.CSSProperties {
+  const c = getCatColor(cat);
+  return { backgroundColor: `${c}14`, borderColor: `${c}26` };
+}
 
 type MenuAssignmentData = {
   id: string;
@@ -245,8 +265,21 @@ export default function DeliveryCalendarPage() {
     setSelectedDate(null);
   };
 
-  const salads = products.filter((p) => p.category?.slug === "salad");
-  const meals = products.filter((p) => p.category?.slug !== "salad");
+  // 카테고리별 동적 그룹핑 (category.sortOrder 기준)
+  const productsByCategory = useMemo(() => {
+    const groups = new Map<string, { category: Category; items: Product[] }>();
+    for (const p of products) {
+      if (!p.category) continue;
+      const key = p.category.id;
+      if (!groups.has(key)) {
+        groups.set(key, { category: p.category, items: [] });
+      }
+      groups.get(key)!.items.push(p);
+    }
+    return Array.from(groups.values()).sort(
+      (a, b) => (a.category.sortOrder ?? 99) - (b.category.sortOrder ?? 99),
+    );
+  }, [products]);
 
   return (
     <div className="p-4 max-w-[1400px] mx-auto">
@@ -334,9 +367,11 @@ export default function DeliveryCalendarPage() {
                     {isActive && assignments.length > 0 && (
                       <div className="mt-1 space-y-px">
                         {assignments.map((a) => (
-                          <p key={a.productId} className={`text-[10px] leading-tight truncate font-medium ${
-                            a.product.category?.slug === "salad" ? "text-[#1D9E75]" : "text-[#EF9F27]"
-                          }`}>
+                          <p
+                            key={a.productId}
+                            className="text-[10px] leading-tight truncate font-medium"
+                            style={{ color: getCatColor(a.product.category) }}
+                          >
                             {a.product.name}
                           </p>
                         ))}
@@ -372,13 +407,16 @@ export default function DeliveryCalendarPage() {
                         <p className="text-xs text-gray-300 italic">메뉴를 추가하세요</p>
                       ) : (
                         selectedAssignments.map((a) => (
-                          <div key={a.productId} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
-                            a.product.category?.slug === "salad" ? "bg-[#f0faf4] border-[#1D9E75]/15" : "bg-[#FFF8EE] border-[#EF9F27]/15"
-                          }`}>
+                          <div
+                            key={a.productId}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg border"
+                            style={getCatBgStyle(a.product.category)}
+                          >
                             <div className="flex-1 min-w-0">
-                              <span className={`text-[9px] font-bold ${
-                                a.product.category?.slug === "salad" ? "text-[#1D9E75]" : "text-[#EF9F27]"
-                              }`}>
+                              <span
+                                className="text-[9px] font-bold"
+                                style={{ color: getCatColor(a.product.category) }}
+                              >
                                 {a.product.category?.name}
                               </span>
                               <p className="text-sm text-gray-800 truncate">{a.product.name}</p>
@@ -454,71 +492,51 @@ export default function DeliveryCalendarPage() {
               </button>
             </div>
             <div className="overflow-y-auto max-h-[55vh] p-3">
-              {salads.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs font-bold text-[#1D9E75] mb-2 px-1">샐러드</p>
-                  {salads.map((p) => {
-                    const alreadyAdded = selectedAssignments.some((a) => a.productId === p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => !alreadyAdded && addProduct(p.id)}
-                        disabled={alreadyAdded}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition ${
-                          alreadyAdded ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
-                          {p.imageUrl ? (
-                            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <span className="material-symbols-outlined text-gray-300">eco</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
-                          <p className="text-xs text-gray-400">{p.price.toLocaleString()}원</p>
-                        </div>
-                        {alreadyAdded && <span className="text-xs text-gray-400">추가됨</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {meals.length > 0 && (
-                <div>
-                  <p className="text-xs font-bold text-[#EF9F27] mb-2 px-1">간편식</p>
-                  {meals.map((p) => {
-                    const alreadyAdded = selectedAssignments.some((a) => a.productId === p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => !alreadyAdded && addProduct(p.id)}
-                        disabled={alreadyAdded}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition ${
-                          alreadyAdded ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
-                          {p.imageUrl ? (
-                            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <span className="material-symbols-outlined text-gray-300">lunch_dining</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
-                          <p className="text-xs text-gray-400">{p.price.toLocaleString()}원</p>
-                        </div>
-                        {alreadyAdded && <span className="text-xs text-gray-400">추가됨</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {salads.length === 0 && meals.length === 0 && (
+              {productsByCategory.length === 0 && (
                 <p className="text-center text-gray-400 py-8">등록된 상품이 없습니다</p>
               )}
+              {productsByCategory.map(({ category, items }) => (
+                <div key={category.id} className="mb-4 last:mb-0">
+                  <p
+                    className="text-xs font-bold mb-2 px-1 flex items-center gap-1.5"
+                    style={{ color: getCatColor(category) }}
+                  >
+                    {category.icon && (
+                      <span className="material-symbols-outlined text-sm">{category.icon}</span>
+                    )}
+                    {category.name}
+                    <span className="text-gray-400 font-medium">({items.length})</span>
+                  </p>
+                  {items.map((p) => {
+                    const alreadyAdded = selectedAssignments.some((a) => a.productId === p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => !alreadyAdded && addProduct(p.id)}
+                        disabled={alreadyAdded}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition ${
+                          alreadyAdded ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
+                          {p.imageUrl ? (
+                            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <span className="material-symbols-outlined text-gray-300">
+                              {category.icon || "restaurant"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                          <p className="text-xs text-gray-400">{p.price.toLocaleString()}원</p>
+                        </div>
+                        {alreadyAdded && <span className="text-xs text-gray-400">추가됨</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -13,22 +13,22 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name: body.name,
-        categoryId: body.categoryId,
-        originalPrice: body.originalPrice ?? null,
-        price: body.price,
-        kcal: body.kcal ?? null,
-        description: body.description ?? null,
-        tags: body.tags ?? null,
-        imageUrl: body.imageUrl ?? null,
-        isActive: body.isActive,
-        dailyLimit: body.dailyLimit ?? null,
-        availableDays: body.availableDays ?? null,
-      },
-    });
+
+    // 부분 업데이트: body에 명시된 필드만 갱신 (가격만 수정 등 단일 필드 PATCH 지원)
+    const data: Record<string, unknown> = {};
+    if ("name" in body) data.name = body.name;
+    if ("categoryId" in body) data.categoryId = body.categoryId;
+    if ("originalPrice" in body) data.originalPrice = body.originalPrice ?? null;
+    if ("price" in body) data.price = body.price;
+    if ("kcal" in body) data.kcal = body.kcal ?? null;
+    if ("description" in body) data.description = body.description ?? null;
+    if ("tags" in body) data.tags = body.tags ?? null;
+    if ("imageUrl" in body) data.imageUrl = body.imageUrl ?? null;
+    if ("isActive" in body) data.isActive = body.isActive;
+    if ("dailyLimit" in body) data.dailyLimit = body.dailyLimit ?? null;
+    if ("availableDays" in body) data.availableDays = body.availableDays ?? null;
+
+    const product = await prisma.product.update({ where: { id }, data });
     return NextResponse.json(product);
   } catch (err) {
     console.error("PATCH /api/admin/products/[id] error:", err);

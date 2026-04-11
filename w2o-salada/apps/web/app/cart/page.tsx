@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import useSWR from "swr";
 import { useCart } from "../store/cart";
 
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
+  const { items, removeItem, updateQuantity, clearCart, totalPrice, baseTotalPrice } = useCart();
+  const { data: settings } = useSWR<{ minOrderAmount: string }>("/api/settings/public", fetcher, {
+    revalidateOnFocus: false,
+  });
+  const minOrderAmount = settings ? Number(settings.minOrderAmount) : 11000;
 
   if (items.length === 0) {
     return (
@@ -23,6 +30,11 @@ export default function CartPage() {
 
   const deliveryFee = totalPrice() >= 15000 ? 0 : 3000;
   const finalTotal = totalPrice() + deliveryFee;
+
+  // 본품 합계 기반 최소 주문액 검증
+  const baseTotal = baseTotalPrice();
+  const shortfall = Math.max(0, minOrderAmount - baseTotal);
+  const canOrder = shortfall === 0;
 
   return (
     <div className="min-h-screen bg-brand-dark">
@@ -107,9 +119,15 @@ export default function CartPage() {
           <h3 className="text-white font-bold mb-4">결제 요약</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-400">상품 금액</span>
-              <span className="text-white">{totalPrice().toLocaleString()}원</span>
+              <span className="text-gray-400">본품 금액 (샐러드·간편식·반찬)</span>
+              <span className="text-white">{baseTotal.toLocaleString()}원</span>
             </div>
+            {totalPrice() !== baseTotal && (
+              <div className="flex justify-between">
+                <span className="text-gray-400">옵션 (음료·유산균 등)</span>
+                <span className="text-white">{(totalPrice() - baseTotal).toLocaleString()}원</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-400">배송비</span>
               <span className={deliveryFee === 0 ? "text-brand-green" : "text-white"}>
@@ -129,12 +147,44 @@ export default function CartPage() {
             </div>
           </div>
 
-          <Link
-            href="/checkout"
-            className="block w-full mt-6 py-3.5 bg-brand-amber text-white rounded-xl font-bold text-lg hover:opacity-90 transition text-center"
-          >
-            주문하기
-          </Link>
+          {/* 최소 주문액 안내 */}
+          {!canOrder && (
+            <div className="mt-5 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+              <p className="text-red-300 text-sm font-semibold flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">info</span>
+                최소 주문액 미달
+              </p>
+              <p className="text-red-200/80 text-xs mt-1 leading-relaxed">
+                본품(샐러드·간편식·반찬)이 <b>{minOrderAmount.toLocaleString()}원</b> 이상이어야 주문 가능합니다.
+                <br />
+                <b className="text-red-100">{shortfall.toLocaleString()}원</b> 더 담아주세요.
+                <span className="text-red-300/60"> (음료·유산균 등 옵션 상품은 최소액 계산에서 제외됩니다)</span>
+              </p>
+            </div>
+          )}
+          {canOrder && baseTotal > 0 && (
+            <p className="mt-4 text-xs text-brand-green/80 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+              최소 주문액 {minOrderAmount.toLocaleString()}원 충족
+            </p>
+          )}
+
+          {canOrder ? (
+            <Link
+              href="/checkout"
+              className="block w-full mt-6 py-3.5 bg-brand-amber text-white rounded-xl font-bold text-lg hover:opacity-90 transition text-center"
+            >
+              주문하기
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="block w-full mt-6 py-3.5 bg-white/10 text-white/40 rounded-xl font-bold text-lg cursor-not-allowed text-center"
+            >
+              주문하기 (본품 {shortfall.toLocaleString()}원 부족)
+            </button>
+          )}
         </div>
       </div>
     </div>

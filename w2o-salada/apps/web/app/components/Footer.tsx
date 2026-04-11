@@ -13,7 +13,14 @@ export default function Footer() {
                 SALADA
               </span>
             </div>
-            <p className="text-gray-500 text-sm">새벽, 신선함이 도착합니다.</p>
+            <p className="text-gray-500 text-sm leading-relaxed">
+              Weekly 2 Order.
+              <br />
+              매주 두 번, 우리 집 식탁이 차려집니다.
+            </p>
+            <p className="text-gray-600 text-xs mt-2">
+              샐러드·간편식·반찬 새벽배송 구독
+            </p>
             <div className="flex gap-4 mt-4 text-sm text-gray-500">
               <a href="#" className="hover:text-brand-green transition">Instagram</a>
               <a href="#" className="hover:text-brand-green transition">YouTube</a>
