@@ -131,13 +131,14 @@ export default function InquiryFAB() {
       {/* FAB 버튼 */}
       <button
         onClick={() => setOpen(true)}
-        className={`fixed z-[100] bottom-6 right-6 w-14 h-14 rounded-full bg-brand-green text-white shadow-lg shadow-brand-green/40 flex items-center justify-center hover:scale-110 transition-all duration-300 ${
+        className={`fixed z-[100] bottom-6 right-6 rounded-full bg-brand-green text-white shadow-lg shadow-brand-green/40 flex items-center gap-2 px-5 py-3.5 hover:scale-105 transition-all duration-300 ${
           open ? "scale-0 opacity-0" : "scale-100 opacity-100"
         }`}
         style={{ animation: open ? "none" : "fabPulse 2.5s ease-in-out infinite" }}
         aria-label="문의하기"
       >
-        <span className="material-symbols-outlined text-2xl">chat_bubble</span>
+        <span className="material-symbols-outlined text-xl">chat_bubble</span>
+        <span className="text-sm font-bold">문의사항</span>
       </button>
 
       {/* 바텀시트 */}
@@ -161,17 +162,23 @@ export default function InquiryFAB() {
             ) : (
               <>
                 {/* 헤더 */}
-                <div className="px-5 pt-4 pb-3 border-b border-white/10 flex items-center justify-between">
-                  <div>
-                    <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-3 sm:hidden" />
-                    <h3 className="text-white font-bold text-lg flex items-center gap-2">
-                      <span className="material-symbols-outlined text-brand-green">chat_bubble</span>
-                      무엇이든 물어보세요
-                    </h3>
+                <div className="px-5 pt-4 pb-3 border-b border-white/10">
+                  <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-3 sm:hidden" />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                        <span className="material-symbols-outlined text-brand-green">chat_bubble</span>
+                        문의사항
+                      </h3>
+                      <p className="text-brand-green text-xs font-semibold mt-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">schedule</span>
+                        22시 이전에는 10분 내 답변드립니다
+                      </p>
+                    </div>
+                    <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white p-1">
+                      <span className="material-symbols-outlined">close</span>
+                    </button>
                   </div>
-                  <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white p-1">
-                    <span className="material-symbols-outlined">close</span>
-                  </button>
                 </div>
 
                 <div className="overflow-y-auto p-5 space-y-5">
