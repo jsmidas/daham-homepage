@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendAlimtalkSafe, TEMPLATE } from "../../lib/notification";
+import { sendSmsDirect } from "../../lib/notification";
 
 // POST: 고객 문의 접수 + 운영자 알림
 export async function POST(request: Request) {
@@ -44,25 +44,14 @@ export async function POST(request: Request) {
       const notifySetting = await prisma.setting.findUnique({ where: { key: "inquiry.notifyPhones" } });
       const phones = notifySetting?.value?.split(",").map((p: string) => p.trim()).filter(Boolean) ?? [];
 
-      const categoryLabels: Record<string, string> = {
-        order: "주문",
-        delivery: "배송",
-        subscription: "구독",
-        general: "일반",
-      };
-      const catLabel = categoryLabels[category ?? "general"] ?? "일반";
-      const preview = content.length > 30 ? content.slice(0, 30) + "..." : content;
+      const catLabels: Record<string, string> = { order: "주문", delivery: "배송", subscription: "구독", general: "일반" };
+      const cat = catLabels[category ?? "general"] ?? "일반";
+      const preview = content.length > 20 ? content.slice(0, 20) + ".." : content;
+      const smsText = `[W2O] ${cat}문의 ${name}: ${preview}`;
 
       for (const adminPhone of phones) {
-        await sendAlimtalkSafe({
-          userId: "admin",
-          to: adminPhone,
-          templateCode: TEMPLATE.ORDER_PAID,
-          variables: {
-            고객명: name,
-            주문번호: `[${catLabel} 문의] ${preview}`,
-          },
-        });
+        const result = await sendSmsDirect(adminPhone, smsText);
+        if (!result.ok) console.warn("문의 알림 실패:", adminPhone, result.error);
       }
     } catch (notifyErr) {
       console.warn("운영자 알림 발송 실패 (문의는 정상 접수):", notifyErr);

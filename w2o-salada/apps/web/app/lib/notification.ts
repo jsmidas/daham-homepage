@@ -80,8 +80,7 @@ function normalizePhone(phone: string): string {
 function isLiveMode(): boolean {
   return Boolean(
     process.env.SOLAPI_API_KEY &&
-      process.env.SOLAPI_API_SECRET &&
-      process.env.SOLAPI_PFID,
+      process.env.SOLAPI_API_SECRET,
   );
 }
 
@@ -118,7 +117,7 @@ async function callSolapi(
     message: {
       to,
       from: process.env.SOLAPI_SENDER_PHONE ?? "",
-      type: templateId ? "ATA" : "SMS", // ATA=알림톡, SMS 폴백
+      type: templateId ? "ATA" : (Buffer.byteLength(renderedText, "utf8") > 90 ? "LMS" : "SMS"),
       ...(templateId
         ? {
             kakaoOptions: {
@@ -129,7 +128,7 @@ async function callSolapi(
             },
           }
         : {
-            text: renderedText, // 템플릿 ID 없으면 SMS로 발송
+            text: renderedText, // 템플릿 ID 없으면 SMS/LMS로 발송
           }),
     },
   };
@@ -177,16 +176,22 @@ export async function sendAlimtalk(
   const renderedText = renderTemplate(templateCode, variables);
   const mocked = !isLiveMode();
 
-  // 1. DB에 PENDING으로 기록
-  const notification = await prisma.notification.create({
-    data: {
-      userId,
-      type: "ALIMTALK",
-      templateCode,
-      content: renderedText,
-      status: "PENDING",
-    },
-  });
+  // 1. DB에 PENDING으로 기록 (userId가 유효하지 않으면 스킵)
+  let notificationId: string | null = null;
+  try {
+    const notification = await prisma.notification.create({
+      data: {
+        userId,
+        type: "ALIMTALK",
+        templateCode,
+        content: renderedText,
+        status: "PENDING",
+      },
+    });
+    notificationId = notification.id;
+  } catch {
+    // userId FK 실패 등 — DB 기록 없이 발송 계속 진행
+  }
 
   // 2. Mock 모드: 콘솔 출력 후 바로 SENT 처리
   if (mocked) {
@@ -195,30 +200,71 @@ export async function sendAlimtalk(
       templateCode,
       content: renderedText,
     });
-    await prisma.notification.update({
-      where: { id: notification.id },
-      data: { status: "SENT", sentAt: new Date() },
-    });
-    return { ok: true, mocked: true, notificationId: notification.id };
+    if (notificationId) {
+      await prisma.notification.update({
+        where: { id: notificationId },
+        data: { status: "SENT", sentAt: new Date() },
+      }).catch(() => {});
+    }
+    return { ok: true, mocked: true, notificationId: notificationId ?? "none" };
   }
 
   // 3. 실발송
   const result = await callSolapi(normalizedTo, templateCode, renderedText, variables);
 
-  await prisma.notification.update({
-    where: { id: notification.id },
-    data: {
-      status: result.ok ? "SENT" : "FAILED",
-      sentAt: result.ok ? new Date() : null,
-    },
-  });
+  if (notificationId) {
+    await prisma.notification.update({
+      where: { id: notificationId },
+      data: {
+        status: result.ok ? "SENT" : "FAILED",
+        sentAt: result.ok ? new Date() : null,
+      },
+    }).catch(() => {});
+  }
 
   return {
     ok: result.ok,
     mocked: false,
-    notificationId: notification.id,
+    notificationId: notificationId ?? "none",
     error: result.error,
   };
+}
+
+// ── 단순 SMS 발송 (템플릿 없이 직접 텍스트, 문의 알림 등) ──
+export async function sendSmsDirect(
+  to: string,
+  text: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isLiveMode()) {
+    console.log("[SMS Mock 발송]", { to: normalizePhone(to), text });
+    return { ok: true };
+  }
+
+  const normalizedTo = normalizePhone(to);
+  const type = Buffer.byteLength(text, "utf8") > 90 ? "LMS" : "SMS";
+
+  try {
+    const res = await fetch("https://api.solapi.com/messages/v4/send", {
+      method: "POST",
+      headers: {
+        Authorization: buildSolapiAuthHeader(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: {
+          to: normalizedTo,
+          from: process.env.SOLAPI_SENDER_PHONE ?? "",
+          type,
+          text,
+        },
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { ok: false, error: data.errorMessage ?? JSON.stringify(data) };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
+  }
 }
 
 // ── 안전 래퍼 (알림톡 실패가 주 로직을 망치지 않도록) ─────
