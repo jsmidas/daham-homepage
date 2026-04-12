@@ -3,6 +3,7 @@ import "./globals.css";
 import Providers from "./providers";
 import RightDock from "./components/RightDock";
 import MobileInstallBanner from "./components/MobileInstallBanner";
+import InquiryFAB from "./components/InquiryFAB";
 
 const SITE_URL = "https://www.w2o.co.kr";
 const SITE_NAME = "W2O SALADA";
@@ -87,6 +88,7 @@ export default function RootLayout({
           {children}
           <RightDock />
           <MobileInstallBanner />
+          <InquiryFAB />
         </Providers>
       </body>
     </html>

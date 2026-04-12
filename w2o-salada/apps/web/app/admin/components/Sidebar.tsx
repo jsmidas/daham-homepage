@@ -40,6 +40,7 @@ const menuGroups: { title: string; items: { href: string; icon: string; label: s
     title: "고객",
     items: [
       { href: "/admin/members", icon: "people", label: "회원 관리" },
+      { href: "/admin/inquiries", icon: "support_agent", label: "문의 관리" },
       { href: "/admin/reviews", icon: "rate_review", label: "리뷰 관리" },
       { href: "/admin/notifications", icon: "notifications", label: "알림톡" },
     ],
