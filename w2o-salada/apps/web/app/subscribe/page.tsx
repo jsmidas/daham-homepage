@@ -1,8 +1,10 @@
 import { prisma } from "@repo/db";
 import SubscribeClient from "./SubscribeClient";
 
+// 5분마다 재생성 (ISR)
+export const revalidate = 300;
+
 // 서버에서 데이터를 프리페치하여 클라이언트 컴포넌트에 전달
-// → API 워터폴 제거, 초기 로딩 대폭 단축
 export default async function SubscribePage() {
   const now = new Date();
   const curYear = now.getFullYear();
@@ -56,21 +58,5 @@ export default async function SubscribePage() {
     },
   };
 
-  // 첫 배송일의 이미지를 프리로드
-  const imageUrls = new Set<string>();
-  for (const day of calendarData) {
-    for (const ma of day.menuAssignments ?? []) {
-      if (ma.product?.imageUrl) imageUrls.add(ma.product.imageUrl);
-    }
-    if (imageUrls.size >= 6) break;
-  }
-
-  return (
-    <>
-      {Array.from(imageUrls).map((url) => (
-        <link key={url} rel="preload" as="image" href={url} />
-      ))}
-      <SubscribeClient initialData={initialData} />
-    </>
-  );
+  return <SubscribeClient initialData={initialData} />;
 }
