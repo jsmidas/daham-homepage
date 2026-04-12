@@ -49,7 +49,6 @@ const menuGroups: MenuGroup[] = [
     permission: "customers",
     items: [
       { href: "/admin/members", icon: "people", label: "회원 관리" },
-      { href: "/admin/inquiries", icon: "support_agent", label: "문의 관리" },
       { href: "/admin/reviews", icon: "rate_review", label: "리뷰 관리" },
       { href: "/admin/notifications", icon: "notifications", label: "알림톡" },
     ],

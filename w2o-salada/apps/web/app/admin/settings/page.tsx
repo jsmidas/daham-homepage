@@ -194,34 +194,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* 문의 알림 설정 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border">
-          <h3 className="font-bold text-gray-700 mb-1">문의 알림 수신</h3>
-          <p className="text-xs text-gray-400 mb-4">고객이 문의를 남기면 아래 번호로 즉시 알림톡이 발송됩니다.</p>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">알림 받을 번호</label>
-              <input
-                type="text"
-                value={settings["inquiry.notifyPhones" as keyof typeof settings]}
-                onChange={(e) => update("inquiry.notifyPhones", e.target.value)}
-                placeholder="010-1234-5678,010-8765-4321"
-                className={inputClass}
-              />
-              <p className="text-xs text-gray-400 mt-1">여러 명이면 쉼표(,)로 구분. 등록된 전원에게 동시 발송됩니다.</p>
-            </div>
-          </div>
-          <div className="mt-5 flex items-center gap-3">
-            <button
-              onClick={() => handleSave("inquiry", ["inquiry.notifyPhones"])}
-              className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition"
-            >
-              저장
-            </button>
-            {saved === "inquiry" && <span className="text-sm text-[#1D9E75] font-medium">저장되었습니다 ✓</span>}
-          </div>
-        </div>
-
         {/* 결제 설정 */}
         <div className="bg-white rounded-xl p-6 shadow-sm border">
           <h3 className="font-bold text-gray-700 mb-4">결제 설정 (토스페이먼츠)</h3>

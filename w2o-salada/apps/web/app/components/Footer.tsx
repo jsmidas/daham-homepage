@@ -43,7 +43,7 @@ export default function Footer() {
             <h4 className="text-white font-bold mb-4">고객지원</h4>
             <ul className="space-y-2 text-sm text-gray-500">
               <li><Link href="/faq" className="hover:text-gray-300 transition">자주 묻는 질문</Link></li>
-              <li><Link href="/contact" className="hover:text-gray-300 transition">1:1 문의</Link></li>
+              <li><a href="https://pf.kakao.com/_xfLLuX/chat" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition">카톡 문의</a></li>
               <li><Link href="/terms" className="hover:text-gray-300 transition">이용약관</Link></li>
               <li><Link href="/privacy" className="hover:text-gray-300 transition">개인정보처리방침</Link></li>
             </ul>
