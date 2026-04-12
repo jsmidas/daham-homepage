@@ -40,16 +40,22 @@ const ALL_TAB = "__all__";
 const DEFAULT_COLOR = "#1D9E75";
 const DEFAULT_ICON = "restaurant";
 
-export default function WeeklyMenuSection() {
-  const [calendar, setCalendar] = useState<CalendarDay[]>([]);
+type InitialMenuData = {
+  calendar: CalendarDay[];
+  categories: Category[];
+};
+
+export default function WeeklyMenuSection({ initialData }: { initialData?: InitialMenuData }) {
+  const [calendar, setCalendar] = useState<CalendarDay[]>(initialData?.calendar ?? []);
   const [fallbackProducts, setFallbackProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(initialData?.categories ?? []);
   const [activeTab, setActiveTab] = useState<string>(ALL_TAB);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
 
   const MIN_DELIVERIES = 8;
 
   useEffect(() => {
+    if (initialData) return;
     const now = new Date();
     const curYear = now.getFullYear();
     const curMonth = now.getMonth() + 1;
@@ -77,7 +83,7 @@ export default function WeeklyMenuSection() {
       }
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   const cutoffDate = (() => {
     const d = new Date();
@@ -387,7 +393,7 @@ function MenuItemRow({ item }: { item: Product }) {
       <Link href={`/products/${item.id}`} className="flex gap-3 items-center flex-1 min-w-0">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center shrink-0 overflow-hidden group-hover/item:shadow-md transition-shadow">
           {item.imageUrl ? (
-            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" width={48} height={48} decoding="async" />
           ) : (
             <span className="material-symbols-outlined text-[#1D9E75] text-xl">lunch_dining</span>
           )}
