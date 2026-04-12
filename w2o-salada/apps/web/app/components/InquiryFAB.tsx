@@ -24,13 +24,26 @@ export default function InquiryFAB() {
   const [images, setImages] = useState<{ url: string; uploading: boolean }[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [phonePreFilled, setPhonePreFilled] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // 로그인 유저 자동 채움
+  // 로그인 유저 자동 채움 (이름 + DB에서 연락처 조회)
   useEffect(() => {
     if (session?.user) {
-      const user = session.user as { name?: string; phone?: string };
+      const user = session.user as { id?: string; name?: string };
       if (user.name) setName(user.name);
+      if (user.id) {
+        fetch(`/api/auth/session`)
+          .then((r) => r.json())
+          .then((data) => {
+            const phone = data?.user?.phone;
+            if (phone) {
+              setPhone(phone);
+              setPhonePreFilled(true);
+            }
+          })
+          .catch(() => {});
+      }
     }
   }, [session]);
 
@@ -240,7 +253,7 @@ export default function InquiryFAB() {
                         <span className="material-symbols-outlined text-brand-green text-lg">person</span>
                         {name} 님으로 접수됩니다
                       </div>
-                      {!phone && (
+                      {!phonePreFilled && (
                         <div>
                           <label className="text-white/60 text-xs font-semibold mb-1 block">연락처</label>
                           <input
