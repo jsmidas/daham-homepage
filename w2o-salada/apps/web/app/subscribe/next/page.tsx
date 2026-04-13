@@ -308,7 +308,7 @@ function NextContent() {
             ⏸ 1회 건너뛰기
           </button>
           <Link
-            href={`/subscribe/slot?edit=${subscriptionId}`}
+            href="/subscribe"
             className="py-3 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/5 text-center"
           >
             ⚙ 구성 수정

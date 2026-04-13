@@ -218,7 +218,7 @@ export default function WeeklyMenuSection({ initialData }: { initialData?: Initi
 
         <div className="text-center mt-10 space-y-3">
           <p className="text-[#7aaa90] text-xs">* 식단은 재료 수급에 따라 변경될 수 있습니다</p>
-          <Link href="/subscribe/slot" className="inline-block px-8 py-3 bg-[#1D9E75] text-white rounded-full font-semibold hover:bg-[#167A5B] hover:shadow-lg hover:shadow-[#1D9E75]/30 hover:-translate-y-0.5 transition-all duration-300">
+          <Link href="/subscribe" className="inline-block px-8 py-3 bg-[#1D9E75] text-white rounded-full font-semibold hover:bg-[#167A5B] hover:shadow-lg hover:shadow-[#1D9E75]/30 hover:-translate-y-0.5 transition-all duration-300">
             이 식단으로 구독 시작하기
           </Link>
         </div>
@@ -310,7 +310,7 @@ function DayCard({ day, spanClass, activeCategories }: {
                 {group.category.name}
               </p>
               <div className="space-y-2">
-                {group.items.map((item, idx) => <MenuItemRow key={idx} item={item} />)}
+                {group.items.map((item, idx) => <MenuItemRow key={idx} item={item} deliveryDate={day.date} />)}
               </div>
             </div>
           );
@@ -369,58 +369,106 @@ function generateFallback(products: Product[]): DisplayDay[] {
   return days;
 }
 
-function MenuItemRow({ item }: { item: Product }) {
-  const { addItem } = useCart();
-  const [added, setAdded] = useState(false);
+function MenuItemRow({ item, deliveryDate }: { item: Product; deliveryDate: string }) {
+  const addItem = useCart((s) => s.addItem);
+  const updateQuantity = useCart((s) => s.updateQuantity);
+  const inCart = useCart((s) =>
+    s.items.find((i) => i.productId === item.id && (i.deliveryDate ?? "") === deliveryDate),
+  );
+  const quantity = inCart?.quantity ?? 0;
+
+  const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    stop(e);
     addItem({
       productId: item.id,
       name: item.name,
-      price: item.price, // 상시 할인가 모델: 고객에게 항상 판매가(price)로 결제
+      price: item.price,
       imageUrl: item.imageUrl,
       quantity: 1,
+      deliveryDate,
       isOption: item.category?.isOption ?? false,
     });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
   };
 
+  const handleDec = (e: React.MouseEvent) => {
+    stop(e);
+    updateQuantity(item.id, quantity - 1, deliveryDate);
+  };
+  const handleInc = (e: React.MouseEvent) => {
+    stop(e);
+    updateQuantity(item.id, quantity + 1, deliveryDate);
+  };
+
+  const NameAndPrice = (
+    <>
+      <div className="min-w-0 flex-1">
+        {item.tags && <span className="text-[9px] font-bold text-[#EF9F27] tracking-wider">{item.tags}</span>}
+        <p className="text-[#0A1A0F] font-semibold text-sm leading-tight truncate">{item.name}</p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        {item.originalPrice && item.originalPrice > item.price && (
+          <span className="text-gray-400 text-[10px] line-through">{item.originalPrice.toLocaleString()}원</span>
+        )}
+        <span className="text-[#1D9E75] text-xs font-bold">{item.price.toLocaleString()}원</span>
+      </div>
+    </>
+  );
+
   return (
-    <div className="flex gap-3 items-center group/item hover:bg-[#f0faf4] rounded-xl p-1.5 -m-1.5 transition-colors">
-      <Link href={`/products/${item.id}`} className="flex gap-3 items-center flex-1 min-w-0">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center shrink-0 overflow-hidden group-hover/item:shadow-md transition-shadow">
-          {item.imageUrl ? (
-            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" width={48} height={48} decoding="async" />
-          ) : (
-            <span className="material-symbols-outlined text-[#1D9E75] text-xl">lunch_dining</span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          {item.tags && <span className="text-[9px] font-bold text-[#EF9F27] tracking-wider">{item.tags}</span>}
-          <p className="text-[#0A1A0F] font-semibold text-sm leading-tight truncate group-hover/item:text-[#1D9E75] transition-colors">{item.name}</p>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {item.originalPrice && item.originalPrice > item.price && (
-            <span className="text-gray-400 text-[10px] line-through">{item.originalPrice.toLocaleString()}원</span>
-          )}
-          <span className="text-[#1D9E75] text-xs font-bold">{item.price.toLocaleString()}원</span>
-        </div>
-      </Link>
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-          added
-            ? "bg-[#1D9E75] text-white"
-            : "bg-[#1D9E75]/10 text-[#1D9E75] hover:bg-[#1D9E75]/20"
-        }`}
-        title="장바구니 담기"
+    <div className="flex gap-3 items-center hover:bg-[#f0faf4] rounded-xl p-1.5 -m-1.5 transition-colors">
+      {/* 이미지: 상품 상세로만 이동 */}
+      <Link
+        href={`/products/${item.id}`}
+        className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#e8f5ee] to-[#d4edda] flex items-center justify-center shrink-0 overflow-hidden hover:shadow-md transition-shadow"
+        aria-label={`${item.name} 상세보기`}
       >
-        <span className="material-symbols-outlined text-lg">{added ? "check" : "add_shopping_cart"}</span>
-      </button>
+        {item.imageUrl ? (
+          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-xl" width={48} height={48} decoding="async" />
+        ) : (
+          <span className="material-symbols-outlined text-[#1D9E75] text-xl">lunch_dining</span>
+        )}
+      </Link>
+
+      {quantity === 0 ? (
+        // 담기 전: 한 개의 큰 버튼 (텍스트 + 가격 + amber 장바구니 아이콘)
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="flex flex-1 min-w-0 items-center gap-3 group/add hover:bg-[#fff6e5] rounded-lg px-2 -mx-2 py-1 transition-colors"
+          title={`${item.name} 장바구니 담기`}
+        >
+          {NameAndPrice}
+          <span className="shrink-0 w-9 h-9 rounded-lg bg-brand-amber text-white flex items-center justify-center shadow-md shadow-[#EF9F27]/30 group-hover/add:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
+          </span>
+        </button>
+      ) : (
+        // 담은 후: 텍스트는 표시만, 우측에 amber 스테퍼
+        <>
+          <div className="flex flex-1 min-w-0 items-center gap-3 px-2 -mx-2">{NameAndPrice}</div>
+          <div className="shrink-0 flex items-center gap-1 bg-brand-amber rounded-lg px-1.5 py-1 shadow-md shadow-[#EF9F27]/30">
+            <button
+              type="button"
+              onClick={handleDec}
+              className="w-7 h-7 rounded-md bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+              title="수량 감소"
+            >
+              <span className="material-symbols-outlined text-base">remove</span>
+            </button>
+            <span className="text-white text-sm font-bold min-w-[16px] text-center">{quantity}</span>
+            <button
+              type="button"
+              onClick={handleInc}
+              className="w-7 h-7 rounded-md bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"
+              title="수량 증가"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

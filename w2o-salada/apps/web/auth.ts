@@ -32,12 +32,14 @@ const config: NextAuthConfig = {
             const prisma = await getPrisma();
             const admin = await prisma.user.upsert({
               where: { email: "admin@w2o.kr" },
-              update: { role: "ADMIN", name: "관리자" },
+              // permissions를 매번 null로 리셋 → 슈퍼관리자(전체 권한)로 강제 복구
+              update: { role: "ADMIN", name: "관리자", permissions: null },
               create: {
                 username: "admin",
                 email: "admin@w2o.kr",
                 name: "관리자",
                 role: "ADMIN",
+                permissions: null,
               },
             });
             return {

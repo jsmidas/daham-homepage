@@ -53,6 +53,9 @@ export async function PATCH(
     const data: Record<string, unknown> = {};
     if (body.frequency) data.frequency = body.frequency;
     if (body.planType) data.planType = body.planType;
+    if (body.selectionMode === "AUTO" || body.selectionMode === "MANUAL") {
+      data.selectionMode = body.selectionMode;
+    }
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "변경할 값이 없습니다." }, { status: 400 });

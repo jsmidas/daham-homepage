@@ -53,9 +53,13 @@ export default function CartPage() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* 상품 목록 */}
         <div className="space-y-4 mb-8">
-          {items.map((item) => (
+          {items.map((item) => {
+            const dateLabel = item.deliveryDate
+              ? new Date(item.deliveryDate).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" })
+              : null;
+            return (
             <div
-              key={item.productId}
+              key={`${item.productId}::${item.deliveryDate ?? ""}`}
               className="bg-white/5 rounded-xl p-4 border border-white/10 flex gap-4"
             >
               {/* 이미지 */}
@@ -70,9 +74,16 @@ export default function CartPage() {
               {/* 정보 */}
               <div className="flex-1">
                 <div className="flex justify-between items-start">
-                  <h3 className="text-white font-bold">{item.name}</h3>
+                  <div>
+                    <h3 className="text-white font-bold">{item.name}</h3>
+                    {dateLabel && (
+                      <span className="inline-block mt-0.5 px-2 py-0.5 bg-brand-amber/15 text-brand-amber text-[10px] font-bold rounded">
+                        {dateLabel} 배송
+                      </span>
+                    )}
+                  </div>
                   <button
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(item.productId, item.deliveryDate)}
                     className="text-gray-500 hover:text-red-400 transition"
                   >
                     <span className="material-symbols-outlined text-lg">close</span>
@@ -83,14 +94,14 @@ export default function CartPage() {
                 </p>
                 <div className="flex items-center gap-3 mt-2">
                   <button
-                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.productId, item.quantity - 1, item.deliveryDate)}
                     className="w-7 h-7 rounded border border-white/20 text-white text-sm flex items-center justify-center hover:bg-white/10"
                   >
                     -
                   </button>
                   <span className="text-white font-bold">{item.quantity}</span>
                   <button
-                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.productId, item.quantity + 1, item.deliveryDate)}
                     className="w-7 h-7 rounded border border-white/20 text-white text-sm flex items-center justify-center hover:bg-white/10"
                   >
                     +
@@ -101,7 +112,8 @@ export default function CartPage() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* 비우기 */}

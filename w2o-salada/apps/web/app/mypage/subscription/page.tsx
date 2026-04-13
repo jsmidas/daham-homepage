@@ -40,8 +40,8 @@ const statusColors: Record<string, string> = {
 };
 
 const modeLabels: Record<string, string> = {
-  MANUAL: "직접 골라먹기",
-  AUTO: "잘 챙겨서 보내줘",
+  MANUAL: "맞춤 정기구독",
+  AUTO: "알아서 정기구독",
 };
 
 export default function SubscriptionPage() {
@@ -91,7 +91,7 @@ export default function SubscriptionPage() {
             <span className="material-symbols-outlined text-5xl text-[#1D9E75]/15 block mb-3">autorenew</span>
             <p className="text-[#4a7a5e] mb-2">진행 중인 구독이 없습니다.</p>
             <p className="text-[#7aaa90] text-xs mb-5">정기구독으로 매주 신선한 샐러드를 받아보세요.</p>
-            <Link href="/subscribe/slot" className="inline-block px-6 py-2.5 bg-[#1D9E75] text-white rounded-full font-semibold text-sm hover:bg-[#167A5B] transition">
+            <Link href="/subscribe" className="inline-block px-6 py-2.5 bg-[#1D9E75] text-white rounded-full font-semibold text-sm hover:bg-[#167A5B] transition">
               구독 시작하기
             </Link>
           </div>
@@ -167,6 +167,43 @@ export default function SubscriptionPage() {
                     </div>
                   )}
 
+                  {/* 모드 전환 */}
+                  {sub.status === "ACTIVE" && (
+                    <div className="flex items-center justify-between mb-3 p-3 bg-[#f0faf4] rounded-xl">
+                      <div>
+                        <p className="text-[#0A1A0F] text-sm font-semibold">메뉴 선택 방식</p>
+                        <p className="text-[#7aaa90] text-[11px] mt-0.5">
+                          {sub.selectionMode === "AUTO"
+                            ? "매주 알아서 배정 (원하면 미리보기에서 교체)"
+                            : "매 배송 전 직접 선택 (D-3 알림톡)"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const next = sub.selectionMode === "AUTO" ? "MANUAL" : "AUTO";
+                          const label = next === "AUTO" ? "알아서 정기구독" : "맞춤 정기구독";
+                          if (!confirm(`${label}으로 전환할까요?`)) return;
+                          const res = await fetch(`/api/subscriptions/${sub.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ selectionMode: next }),
+                          });
+                          if (res.ok) {
+                            setSubs((prev) =>
+                              prev.map((s) => (s.id === sub.id ? { ...s, selectionMode: next } : s)),
+                            );
+                          } else {
+                            alert("전환에 실패했습니다. 잠시 후 다시 시도해주세요.");
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-full bg-white border border-[#1D9E75]/30 text-[#1D9E75] text-xs font-semibold hover:bg-[#1D9E75]/5 transition"
+                      >
+                        {sub.selectionMode === "AUTO" ? "맞춤으로" : "알아서로"}
+                      </button>
+                    </div>
+                  )}
+
                   {/* 액션 버튼 */}
                   <div className="flex gap-2 pt-3 border-t border-[#1D9E75]/10">
                     <Link
@@ -175,12 +212,12 @@ export default function SubscriptionPage() {
                     >
                       상세 관리
                     </Link>
-                    {sub.status === "ACTIVE" && sub.selectionMode === "MANUAL" && (
+                    {sub.status === "ACTIVE" && (
                       <Link
-                        href="/subscribe?plan=manual"
+                        href={`/subscribe/next?subscriptionId=${sub.id}`}
                         className="flex-1 text-center text-sm text-white font-medium bg-[#1D9E75] hover:bg-[#167A5B] rounded-xl py-2.5 transition"
                       >
-                        다음 달 메뉴 선택
+                        다음 배송 메뉴
                       </Link>
                     )}
                   </div>

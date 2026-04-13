@@ -14,6 +14,7 @@ declare global {
 interface DaumAddr { address: string; zonecode: string; buildingName: string; }
 
 const SAVED_ADDRESSES_KEY = "w2o_saved_addresses";
+const DRAFT_KEY = "w2o_checkout_draft";
 const MEMO_PRESETS = [
   "문 앞에 놓아주세요",
   "경비실에 맡겨주세요",
@@ -28,8 +29,11 @@ interface SavedAddress {
   label: string;
   name: string;
   phone: string;
+  zipCode?: string;
   address1: string;
   address2: string;
+  source?: "local" | "db";
+  isDefault?: boolean;
 }
 
 export default function CheckoutPage() {
@@ -38,7 +42,7 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [address, setAddress] = useState({ name: "", phone: "", address1: "", address2: "", deliveryMemo: "" });
+  const [address, setAddress] = useState({ name: "", phone: "", zipCode: "", address1: "", address2: "", deliveryMemo: "" });
   const [memoOpen, setMemoOpen] = useState(false);
   const [customMemo, setCustomMemo] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -52,13 +56,131 @@ export default function CheckoutPage() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  // 저장된 배송지 불러오기
+  // 저장된 배송지 불러오기 — 로그인: DB Address + 회원 Profile + localStorage 병합, 게스트: localStorage만
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(SAVED_ADDRESSES_KEY);
-      if (saved) setSavedAddresses(JSON.parse(saved));
-    } catch {}
-  }, []);
+    let cancelled = false;
+    const readDraft = (): {
+      name?: string;
+      phone?: string;
+      zipCode?: string;
+      address1?: string;
+      address2?: string;
+      deliveryMemo?: string;
+    } | null => {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    };
+    const localList: SavedAddress[] = (() => {
+      try {
+        const saved = localStorage.getItem(SAVED_ADDRESSES_KEY);
+        if (!saved) return [];
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed)
+          ? parsed.map((a: SavedAddress) => ({ ...a, source: "local" as const }))
+          : [];
+      } catch {
+        return [];
+      }
+    })();
+
+    if (status !== "authenticated") {
+      setSavedAddresses(localList);
+      // 게스트: 입력 중이었던 draft 복원
+      const draft = readDraft();
+      if (draft && (draft.name || draft.address1)) {
+        setAddress((prev) => {
+          if (prev.name || prev.address1) return prev;
+          return {
+            name: draft.name ?? "",
+            phone: draft.phone ?? "",
+            zipCode: draft.zipCode ?? "",
+            address1: draft.address1 ?? "",
+            address2: draft.address2 ?? "",
+            deliveryMemo: draft.deliveryMemo ?? "",
+          };
+        });
+      }
+      return;
+    }
+
+    Promise.all([
+      fetch("/api/addresses").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/user/profile").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([dbList, profile]) => {
+      if (cancelled) return;
+
+      const mapped: SavedAddress[] = (Array.isArray(dbList) ? dbList : []).map(
+        (a: {
+          id: string;
+          name: string;
+          phone: string;
+          zipCode: string;
+          address1: string;
+          address2: string | null;
+          isDefault: boolean;
+        }) => ({
+          id: `db-${a.id}`,
+          label: a.isDefault ? "기본 배송지" : "배송지",
+          name: a.name,
+          phone: a.phone,
+          zipCode: a.zipCode,
+          address1: a.address1,
+          address2: a.address2 ?? "",
+          source: "db",
+          isDefault: a.isDefault,
+        }),
+      );
+      setSavedAddresses([...mapped, ...localList]);
+
+      // 저장된 DB 주소가 있으면 목록 자동 펼치기
+      if (mapped.length > 0) setShowSaved(true);
+
+      // 자동 프리필: 기본배송지 > 첫 DB 주소 > 입력 중이던 draft > 회원 프로필(name/phone만)
+      setAddress((prev) => {
+        if (prev.name || prev.address1) return prev;
+        const defaultAddr = mapped.find((a) => a.isDefault) ?? mapped[0];
+        if (defaultAddr) {
+          return {
+            name: defaultAddr.name,
+            phone: defaultAddr.phone,
+            zipCode: defaultAddr.zipCode ?? "",
+            address1: defaultAddr.address1,
+            address2: defaultAddr.address2,
+            deliveryMemo: prev.deliveryMemo,
+          };
+        }
+        // DB에 주소가 없으면 입력 중이었던 draft 복원
+        const draft = readDraft();
+        if (draft && (draft.name || draft.address1)) {
+          return {
+            name: draft.name ?? "",
+            phone: draft.phone ?? "",
+            zipCode: draft.zipCode ?? "",
+            address1: draft.address1 ?? "",
+            address2: draft.address2 ?? "",
+            deliveryMemo: draft.deliveryMemo ?? "",
+          };
+        }
+        // 주소도 draft도 없지만 프로필에 name/phone이 있으면 일부만 프리필
+        if (profile && (profile.name || profile.phone)) {
+          return {
+            ...prev,
+            name: profile.name ?? prev.name,
+            phone: profile.phone ?? prev.phone,
+          };
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
 
   // 다음 주소검색 스크립트 로드
   useEffect(() => {
@@ -70,6 +192,24 @@ export default function CheckoutPage() {
     document.head.appendChild(script);
   }, []);
 
+  // 결제 승인 API 워밍업 — /api/payments 를 미리 컴파일 시켜 Toss 리턴 후 cold-compile 404 방지
+  useEffect(() => {
+    fetch("/api/payments", { method: "GET" }).catch(() => {});
+  }, []);
+
+  // 입력 중인 주소 draft 저장 — 결제 취소·이탈 후 재진입 시 그대로 복원되도록
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      const hasContent = address.name || address.phone || address.address1 || address.address2;
+      if (hasContent) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(address));
+      }
+    } catch {
+      // localStorage 접근 실패 시 조용히 무시
+    }
+  }, [address, mounted]);
+
   useEffect(() => {
     if (mounted && items.length === 0) router.push("/cart");
   }, [mounted, items, router]);
@@ -79,7 +219,7 @@ export default function CheckoutPage() {
     new window.daum.Postcode({
       oncomplete: (data: DaumAddr) => {
         const addr = data.buildingName ? `${data.address} (${data.buildingName})` : data.address;
-        setAddress((prev) => ({ ...prev, address1: addr }));
+        setAddress((prev) => ({ ...prev, address1: addr, zipCode: data.zonecode ?? prev.zipCode }));
         // 상세주소 input으로 포커스
         setTimeout(() => { document.getElementById("address2-input")?.focus(); }, 100);
       },
@@ -87,7 +227,14 @@ export default function CheckoutPage() {
   }, []);
 
   const selectSavedAddress = (saved: SavedAddress) => {
-    setAddress((prev) => ({ ...prev, name: saved.name, phone: saved.phone, address1: saved.address1, address2: saved.address2 }));
+    setAddress((prev) => ({
+      ...prev,
+      name: saved.name,
+      phone: saved.phone,
+      zipCode: saved.zipCode ?? prev.zipCode,
+      address1: saved.address1,
+      address2: saved.address2,
+    }));
     setShowSaved(false);
   };
 
@@ -132,10 +279,37 @@ export default function CheckoutPage() {
     }
     setLoading(true);
 
-    // 배송지 저장 체크됐으면 저장
+    // 배송지 저장 체크됐으면 localStorage에도 저장
     if (saveThisAddress) saveAddress();
 
     const userId = (session?.user as { id?: string })?.id ?? "guest";
+
+    // 로그인 사용자 주소 자동 저장 (fire-and-forget)
+    //  - 결제 성공·실패·취소 여부와 무관하게 입력 즉시 저장 (사용자가 다시 쓸 수 있게)
+    //  - DB에 저장된 주소가 하나도 없음 → 기본 배송지로 저장 (isDefault=true)
+    //  - DB에 이미 주소가 있고 이번 입력이 새로운 주소 → 배송지 목록에 추가 (isDefault=false)
+    //  - 이번 입력이 기존 저장 주소와 동일 → 건너뜀 (중복 방지)
+    const dbAddresses = savedAddresses.filter((a) => a.source === "db");
+    const fingerprint = (a: { name: string; phone: string; zipCode?: string; address1: string; address2: string }) =>
+      `${a.name.trim()}|${a.phone.trim()}|${(a.zipCode ?? "").trim()}|${a.address1.trim()}|${(a.address2 ?? "").trim()}`;
+    const currentFp = fingerprint(address);
+    const alreadySavedInDb = dbAddresses.some((a) => fingerprint(a) === currentFp);
+
+    if (userId !== "guest" && !alreadySavedInDb && address.zipCode) {
+      fetch("/api/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: address.name,
+          phone: address.phone,
+          zipCode: address.zipCode,
+          address1: address.address1,
+          address2: address.address2 || null,
+          isDefault: dbAddresses.length === 0, // 첫 주소일 때만 기본 배송지
+          deliveryMemo: address.deliveryMemo || null,
+        }),
+      }).catch(() => {});
+    }
 
     const orderRes = await fetch("/api/orders", {
       method: "POST",
@@ -201,27 +375,72 @@ export default function CheckoutPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white font-bold">배송지 정보</h3>
             {savedAddresses.length > 0 && (
-              <button onClick={() => setShowSaved(!showSaved)} className="text-brand-green text-sm font-medium hover:underline">
-                {showSaved ? "닫기" : "저장된 배송지"}
+              <button
+                type="button"
+                onClick={() => setShowSaved(!showSaved)}
+                className="text-brand-green text-sm font-medium hover:underline"
+              >
+                {showSaved ? "목록 닫기" : `저장된 배송지 (${savedAddresses.length})`}
               </button>
             )}
           </div>
 
           {/* 저장된 배송지 목록 */}
-          {showSaved && (
+          {showSaved && savedAddresses.length > 0 && (
             <div className="mb-4 space-y-2">
-              {savedAddresses.map((s) => (
-                <div key={s.id} className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3 border border-white/10">
-                  <button onClick={() => selectSavedAddress(s)} className="text-left flex-1">
-                    <span className="text-brand-green text-xs font-bold">{s.label}</span>
-                    <p className="text-white text-sm">{s.name} · {s.phone}</p>
-                    <p className="text-gray-400 text-xs">{s.address1} {s.address2}</p>
-                  </button>
-                  <button onClick={() => deleteSavedAddress(s.id)} className="text-gray-500 hover:text-red-400 ml-2">
-                    <span className="material-symbols-outlined text-lg">close</span>
-                  </button>
-                </div>
-              ))}
+              {savedAddresses.map((s) => {
+                const selected =
+                  s.name.trim() === address.name.trim() &&
+                  s.address1.trim() === address.address1.trim() &&
+                  (s.address2 ?? "").trim() === (address.address2 ?? "").trim();
+                return (
+                  <div
+                    key={s.id}
+                    className={`flex items-center justify-between rounded-lg px-4 py-3 border transition ${
+                      selected
+                        ? "bg-brand-green/15 border-brand-green"
+                        : "bg-white/5 border-white/10 hover:border-white/25"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => selectSavedAddress(s)}
+                      className="text-left flex-1"
+                    >
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-xs font-bold ${s.isDefault ? "text-brand-amber" : "text-brand-green"}`}>
+                          {s.isDefault ? "★ 기본 배송지" : s.label}
+                        </span>
+                        {selected && (
+                          <span className="text-[10px] font-bold text-brand-green flex items-center gap-0.5">
+                            <span className="material-symbols-outlined text-xs">check_circle</span>
+                            사용 중
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white text-sm">{s.name} · {s.phone}</p>
+                      <p className="text-gray-400 text-xs">
+                        {s.zipCode && <span className="mr-1">[{s.zipCode}]</span>}
+                        {s.address1} {s.address2}
+                      </p>
+                    </button>
+                    {/* 로컬 저장분만 삭제 가능 (DB 주소는 마이페이지에서 관리) */}
+                    {s.source !== "db" && (
+                      <button
+                        type="button"
+                        onClick={() => deleteSavedAddress(s.id)}
+                        className="text-gray-500 hover:text-red-400 ml-2"
+                        title="삭제"
+                      >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              <p className="text-[11px] text-gray-500 mt-2">
+                아래 폼에 다른 주소를 입력하고 결제하면 새 배송지로 자동 저장됩니다.
+              </p>
             </div>
           )}
 
@@ -283,15 +502,23 @@ export default function CheckoutPage() {
         <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
           <h3 className="text-white font-bold mb-4">주문 상품</h3>
           <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.productId} className="flex justify-between items-center">
-                <div>
-                  <p className="text-white text-sm">{item.name}</p>
-                  <p className="text-gray-500 text-xs">수량: {item.quantity}</p>
+            {items.map((item) => {
+              const dateLabel = item.deliveryDate
+                ? new Date(item.deliveryDate).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric", weekday: "short" })
+                : null;
+              return (
+                <div key={`${item.productId}::${item.deliveryDate ?? ""}`} className="flex justify-between items-center">
+                  <div>
+                    <p className="text-white text-sm">
+                      {item.name}
+                      {dateLabel && <span className="ml-2 text-[10px] text-[#5DCAA5] font-bold">({dateLabel} 배송)</span>}
+                    </p>
+                    <p className="text-gray-500 text-xs">수량: {item.quantity}</p>
+                  </div>
+                  <p className="text-white text-sm font-medium">{(item.price * item.quantity).toLocaleString()}원</p>
                 </div>
-                <p className="text-white text-sm font-medium">{(item.price * item.quantity).toLocaleString()}원</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

@@ -23,12 +23,16 @@ export async function POST(request: Request) {
 
     const allProductIds = [...new Set(selections.flatMap((s) => s.productIds))];
 
-    // 유저 존재 확인 + 상품 조회를 병렬로
-    const [userExists, products] = await Promise.all([
+    // 유저 존재 확인 + 상품 조회 + 최소 주문액 설정 조회를 병렬로
+    const [userExists, products, minOrderSetting] = await Promise.all([
       sessionUserId && sessionUserId !== "guest"
         ? prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true } })
         : null,
-      prisma.product.findMany({ where: { id: { in: allProductIds } } }),
+      prisma.product.findMany({
+        where: { id: { in: allProductIds } },
+        include: { category: { select: { isOption: true } } },
+      }),
+      prisma.setting.findUnique({ where: { key: "minOrderAmount" } }),
     ]);
 
     const userId = userExists ? sessionUserId! : "guest";
@@ -37,6 +41,37 @@ export async function POST(request: Request) {
 
     if (validProductIds.length === 0) {
       return NextResponse.json({ error: "유효한 상품이 없습니다." }, { status: 400 });
+    }
+
+    // 회당 본품(isOption=false) 합계 ≥ minOrderAmount 검증 (맛보기 제외)
+    const minAmount = minOrderSetting ? Number(minOrderSetting.value) : 11000;
+    if (plan !== "trial") {
+      const insufficient: { date: string; baseTotal: number }[] = [];
+      for (const sel of selections) {
+        let baseTotal = 0;
+        for (const pid of sel.productIds) {
+          const p = productMap.get(pid) as
+            | { price: number; category?: { isOption: boolean } }
+            | undefined;
+          if (!p) continue;
+          if (p.category?.isOption) continue; // 옵션 카테고리는 본품 합계에서 제외
+          baseTotal += p.price;
+        }
+        if (baseTotal < minAmount) {
+          insufficient.push({ date: sel.date, baseTotal });
+        }
+      }
+      if (insufficient.length > 0) {
+        return NextResponse.json(
+          {
+            error: "회당 본품 최소 주문액 미달",
+            message: `다음 배송일의 본품 합계가 ${minAmount.toLocaleString()}원 미만입니다.`,
+            minAmount,
+            insufficient,
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // 금액 계산

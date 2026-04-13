@@ -22,10 +22,9 @@ export async function GET() {
         createdAt: true,
       },
     });
-    if (!user) {
-      return NextResponse.json({ error: "사용자를 찾을 수 없습니다." }, { status: 404 });
-    }
-    return NextResponse.json(user);
+    // User row가 없더라도 호출자(checkout 프리필 등) 는 null이면 무시하므로 200 으로 응답.
+    // 404 로 반환하면 세션 토큰의 id가 stale인 경우 프론트 콘솔에 에러가 쌓임.
+    return NextResponse.json(user ?? null);
   } catch (err) {
     console.error("GET /api/user/profile error:", err);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });

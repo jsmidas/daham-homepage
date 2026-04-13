@@ -3,6 +3,12 @@ import { sendAlimtalkSafe, TEMPLATE } from "../../lib/notification";
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY ?? "";
 
+// GET: 워밍업 전용 (dev cold-compile 대비). /checkout 진입 시 프리페치되어
+// 사용자가 Toss 결제 후 돌아왔을 때 POST 첫 호출이 즉시 응답하도록 함.
+export async function GET() {
+  return NextResponse.json({ ok: true });
+}
+
 // POST: 결제 승인 (토스페이먼츠 confirm)
 export async function POST(request: Request) {
   try {
@@ -22,10 +28,19 @@ export async function POST(request: Request) {
       const { prisma } = await import("@repo/db");
       const existing = await prisma.order.findUnique({
         where: { orderNo: orderId },
-        select: { totalAmount: true, status: true },
+        select: { id: true, totalAmount: true, status: true, orderNo: true, paymentKey: true },
       });
       if (!existing) {
         return NextResponse.json({ error: "존재하지 않는 주문입니다." }, { status: 404 });
+      }
+      // 이미 PAID면 멱등(idempotent) 응답 — 재시도/새로고침 시 성공으로 취급
+      if (existing.status === "PAID") {
+        return NextResponse.json({
+          success: true,
+          alreadyPaid: true,
+          order: { orderNo: existing.orderNo },
+          payment: { paymentKey: existing.paymentKey, totalAmount: existing.totalAmount, status: "DONE" },
+        });
       }
       if (existing.status !== "PENDING") {
         return NextResponse.json({ error: "이미 처리된 주문입니다." }, { status: 400 });

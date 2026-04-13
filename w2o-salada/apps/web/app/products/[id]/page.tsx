@@ -159,7 +159,7 @@ export default function ProductDetailPage() {
             {/* CTA 버튼 */}
             <div className="flex gap-3">
               <Link
-                href="/subscribe/slot"
+                href="/subscribe"
                 className="flex-1 py-3.5 bg-[#1D9E75] text-white rounded-xl font-semibold hover:bg-[#167A5B] transition text-center flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-xl">autorenew</span>

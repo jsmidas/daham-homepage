@@ -7,12 +7,14 @@ import { useCart } from "../store/cart";
 
 export default function Header() {
   const { data: session } = useSession();
-  const { totalItems } = useCart();
+  const items = useCart((s) => s.items);
+  const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+  const showCart = mounted && cartCount > 0;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 80);
@@ -79,16 +81,26 @@ export default function Header() {
 
         {/* CTA + 로그인 */}
         <div className="hidden md:flex items-center gap-3">
-          {/* 장바구니 아이콘 */}
+          {/* 장바구니 — 담긴 게 있으면 amber로 강조 */}
           <Link
             href="/cart"
-            className={`relative p-2 rounded-full transition ${scrolled ? "text-gray-600 hover:text-brand-green hover:bg-brand-green/10" : "text-white/80 hover:text-white hover:bg-white/10"}`}
+            aria-label={showCart ? `장바구니 ${cartCount}개 — 주문하러 가기` : "장바구니"}
+            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-full font-semibold text-sm transition ${
+              showCart
+                ? "bg-brand-amber text-white shadow-lg shadow-[#EF9F27]/30 hover:opacity-90"
+                : scrolled
+                ? "text-gray-600 hover:text-brand-green hover:bg-brand-green/10"
+                : "text-white/80 hover:text-white hover:bg-white/10"
+            }`}
           >
             <span className="material-symbols-outlined text-xl">shopping_cart</span>
-            {mounted && totalItems() > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-[#EF9F27] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {totalItems() > 99 ? "99+" : totalItems()}
-              </span>
+            {showCart && (
+              <>
+                <span>주문하기</span>
+                <span className="ml-0.5 min-w-[20px] h-5 px-1.5 bg-white text-brand-amber text-[11px] font-black rounded-full flex items-center justify-center">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              </>
             )}
           </Link>
           {session ? (
@@ -112,7 +124,7 @@ export default function Header() {
                 로그아웃
               </button>
               <Link
-                href="/subscribe/slot"
+                href="/subscribe"
                 className="px-5 py-2 bg-brand-green text-white text-sm font-semibold rounded-full hover:bg-brand-mint transition"
               >
                 구독 신청
@@ -127,7 +139,7 @@ export default function Header() {
                 로그인
               </Link>
               <Link
-                href="/subscribe/slot"
+                href="/subscribe"
                 className="px-5 py-2 bg-brand-green text-white text-sm font-semibold rounded-full hover:bg-brand-mint transition"
               >
                 구독 신청
@@ -178,19 +190,21 @@ export default function Header() {
             )}
             <Link
               href="/cart"
-              className="text-gray-800 font-medium py-2 flex items-center gap-2"
+              className={`font-medium py-2 px-3 rounded-full flex items-center gap-2 transition ${
+                showCart ? "bg-brand-amber text-white shadow-lg shadow-[#EF9F27]/30" : "text-gray-800"
+              }`}
               onClick={() => setMobileOpen(false)}
             >
               <span className="material-symbols-outlined text-lg">shopping_cart</span>
-              장바구니
-              {mounted && totalItems() > 0 && (
-                <span className="w-5 h-5 bg-[#EF9F27] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {totalItems()}
+              {showCart ? "장바구니에서 주문하기" : "장바구니"}
+              {showCart && (
+                <span className="ml-1 min-w-[20px] h-5 px-1.5 bg-white text-brand-amber text-[11px] font-black rounded-full flex items-center justify-center">
+                  {cartCount}
                 </span>
               )}
             </Link>
             <Link
-              href="/subscribe/slot"
+              href="/subscribe"
               className="mt-2 px-6 py-3 bg-brand-green text-white text-center rounded-full font-semibold"
               onClick={() => setMobileOpen(false)}
             >
