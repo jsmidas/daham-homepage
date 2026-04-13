@@ -31,6 +31,7 @@ export async function POST(request: Request) {
         name: body.name,
         categoryId: body.categoryId,
         originalPrice: body.originalPrice ?? null,
+        singlePrice: body.singlePrice ?? null,
         price: body.price,
         kcal: body.kcal ?? null,
         description: body.description ?? null,

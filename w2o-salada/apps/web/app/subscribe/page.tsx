@@ -110,7 +110,10 @@ function SubscribeContent() {
       })
       .catch(() => {});
 
-    fetch(`/api/delivery-calendar?year=${curYear}&month=${curMonth}&months=2`)
+    // months=4 — 명절·공휴일로 6주가 7~8주로 늘어나는 케이스까지 안전하게 커버
+    // 실제 표시되는 월 탭은 deliveryDates 에 배송일이 있는 달만 동적으로 생성되므로
+    // over-fetch 는 문제 없음 (최대 12회까지만 slice)
+    fetch(`/api/delivery-calendar?year=${curYear}&month=${curMonth}&months=4`)
       .then((r) => r.json())
       .then((data) => setCalendar(Array.isArray(data) ? data : []))
       .catch(() => setCalendar([]));
@@ -169,12 +172,46 @@ function SubscribeContent() {
         return result;
       })();
 
-  // 달력 그리드 (2개월)
+  // 달력 그리드 — 실제 배송일(deliveryDates)이 존재하는 달만 동적으로 생성
+  // 이렇게 하면 4월말 진입 시 4/5/6월 등 6주 범위에 걸친 달이 모두 자동으로 탭에 노출됨
   const months = useMemo(() => {
-    return [
-      { year: curYear, month: curMonth },
-      { year: nextYear, month: nextMonth },
-    ].map(({ year, month }) => {
+    // deliveryDates 가 로드되기 전(calendar 로딩 중)에는 현재 달 하나만 표시
+    if (deliveryDates.length === 0) {
+      return [
+        {
+          year: curYear,
+          month: curMonth,
+          grid: (() => {
+            const firstDay = new Date(curYear, curMonth - 1, 1);
+            const lastDay = new Date(curYear, curMonth, 0);
+            const startPad = firstDay.getDay();
+            const totalDays = lastDay.getDate();
+            const g: (number | null)[] = [];
+            for (let i = 0; i < startPad; i++) g.push(null);
+            for (let d = 1; d <= totalDays; d++) g.push(d);
+            while (g.length % 7 !== 0) g.push(null);
+            return g;
+          })(),
+        },
+      ];
+    }
+
+    // deliveryDates 기준으로 실제 배송이 있는 year-month 조합 수집
+    const seen = new Set<string>();
+    const uniqueMonths: { year: number; month: number }[] = [];
+    for (const d of deliveryDates) {
+      const [y, m] = d.dateStr.split("-").map(Number);
+      const key = `${y}-${m}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueMonths.push({ year: y!, month: m! });
+      }
+    }
+
+    // 연-월 오름차순 정렬
+    uniqueMonths.sort((a, b) => a.year - b.year || a.month - b.month);
+
+    return uniqueMonths.map(({ year, month }) => {
       const firstDay = new Date(year, month - 1, 1);
       const lastDay = new Date(year, month, 0);
       const startPad = firstDay.getDay();
@@ -185,7 +222,12 @@ function SubscribeContent() {
       while (grid.length % 7 !== 0) grid.push(null);
       return { year, month, grid };
     });
-  }, [curYear, curMonth, nextYear, nextMonth]);
+  }, [deliveryDates, curYear, curMonth]);
+
+  // 탭 유효성 — months 가 줄어들면 calTab 이 범위를 벗어날 수 있음
+  useEffect(() => {
+    if (calTab >= months.length) setCalTab(0);
+  }, [months, calTab]);
 
   // 12회 범위 내 배송일의 마지막 날짜
   const lastDeliveryDate = deliveryDates.length > 0 ? deliveryDates[deliveryDates.length - 1]!.dateStr : "";
@@ -264,14 +306,41 @@ function SubscribeContent() {
   // 완료 체크
   const completedCount = activeDates.filter((d) => getSelectedCount(d.dateStr) >= itemsPerDelivery).length;
 
+  // 카테고리 슬롯 카운트 → 카테고리 slug 매핑
+  // (state 이름은 한국 도메인 약어, slug는 DB 저장 값)
+  const categorySlots: Record<string, number> = {
+    salad: saladCount,
+    simple: mealCount,
+    banchan: banchanCount,
+    drink: drinkCount,
+  };
+
+  // AUTO 모드: 그날 메뉴풀에서 카테고리별로 slot 개수만큼 선택
+  // - 각 카테고리 slug 로 필터 → stock·sortOrder 순(=API의 sortOrder 순)으로 앞에서부터 count개
+  // - 풀이 부족하면 있는 만큼만 (shortages)
+  const getAutoSelectedProductIds = (dateStr: string): string[] => {
+    const menus = getMenuForDate(dateStr);
+    const result: string[] = [];
+    for (const [slug, count] of Object.entries(categorySlots)) {
+      if (count <= 0) continue;
+      const catItems = menus.filter((m) => m.product.category?.slug === slug).slice(0, count);
+      result.push(...catItems.map((m) => m.productId));
+    }
+    return result;
+  };
+
   // 회당 본품(isOption=false) 합계 계산
-  // - AUTO: 그날 메뉴풀의 본품 중 첫 itemsPerDelivery개 합계
+  // - AUTO: 카테고리 슬롯 기준 자동 배정된 것 중 본품만 합계
   // - MANUAL: 사용자가 선택한 productId들 중 본품 합계
   const getDateBaseTotal = (dateStr: string): number => {
     const menus = getMenuForDate(dateStr);
     if (mode === "auto") {
-      const baseMenus = menus.filter((m) => !m.product.category?.isOption);
-      return baseMenus.slice(0, itemsPerDelivery).reduce((sum, m) => sum + m.product.price, 0);
+      const pickedIds = getAutoSelectedProductIds(dateStr);
+      return pickedIds.reduce((sum, pid) => {
+        const m = menus.find((x) => x.productId === pid);
+        if (!m || m.product.category?.isOption) return sum;
+        return sum + m.product.price;
+      }, 0);
     }
     const picks = selection[dateStr] || [];
     return picks.reduce((sum, pid) => {
@@ -292,22 +361,24 @@ function SubscribeContent() {
   // 가격 계산
   const calculatePrice = () => {
     let total = 0;
+    // AUTO 모드: 카테고리 슬롯 기준으로 배정된 상품들의 합계
+    if (mode === "auto") {
+      for (const d of activeDates) {
+        const pickedIds = getAutoSelectedProductIds(d.dateStr);
+        for (const pid of pickedIds) {
+          const product = d.menuAssignments.find((m) => m.productId === pid)?.product;
+          if (product) total += product.price;
+        }
+      }
+      return total;
+    }
+    // MANUAL/TRIAL: 사용자 선택 상품 합계
     for (const d of activeDates) {
       const items = selection[d.dateStr] || [];
       for (const pid of items) {
         const product = d.menuAssignments.find((m) => m.productId === pid)?.product;
         if (product) {
           total += mode === "trial" ? (product.originalPrice || product.price) : product.price;
-        }
-      }
-    }
-    // AUTO 모드: 배정 메뉴 상위 N개로 계산
-    if (mode === "auto") {
-      total = 0;
-      for (const d of activeDates) {
-        const topItems = d.menuAssignments.slice(0, itemsPerDelivery);
-        for (const m of topItems) {
-          total += m.product.price;
         }
       }
     }
@@ -324,8 +395,8 @@ function SubscribeContent() {
       const selections = mode === "auto"
         ? activeDates.map((d) => ({
             date: d.dateStr,
-            productIds: d.menuAssignments.slice(0, itemsPerDelivery).map((m) => m.productId),
-          }))
+            productIds: getAutoSelectedProductIds(d.dateStr),
+          })).filter((s) => s.productIds.length > 0)
         : activeDates.map((d) => ({
             date: d.dateStr,
             productIds: selection[d.dateStr] || [],
@@ -422,7 +493,7 @@ function SubscribeContent() {
                       </span>
                     )}
                     <span className="text-[#4a7a5e] text-sm">
-                      {curMonth}월~{nextMonth}월 · 배송{" "}
+                      {months.length > 0 ? `${months[0]!.month}월~${months[months.length - 1]!.month}월` : `${curMonth}월`} · 배송{" "}
                       <span className="font-bold text-[#0A1A0F]">{activeDates.length}회</span>
                     </span>
                   </div>

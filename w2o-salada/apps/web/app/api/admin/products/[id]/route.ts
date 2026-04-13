@@ -19,6 +19,7 @@ export async function PATCH(
     if ("name" in body) data.name = body.name;
     if ("categoryId" in body) data.categoryId = body.categoryId;
     if ("originalPrice" in body) data.originalPrice = body.originalPrice ?? null;
+    if ("singlePrice" in body) data.singlePrice = body.singlePrice ?? null;
     if ("price" in body) data.price = body.price;
     if ("kcal" in body) data.kcal = body.kcal ?? null;
     if ("description" in body) data.description = body.description ?? null;

@@ -79,7 +79,8 @@ model Product {
   name        String
   description String?
   originalPrice Int?     // 정가 (원)
-  price       Int      // 판매가 (원, 부가세 포함)
+  singlePrice Int?       // 단건 주문가 (원) — 없으면 price 사용. 정가 > 단건가 > 구독가 3-티어 모델의 중간 값
+  price       Int      // 구독 판매가 (원, 부가세 포함) — 구독 시 적용
   kcal        Int?
   imageUrl    String?
   tags        String?  // "BEST", "NEW", "SALE" 등

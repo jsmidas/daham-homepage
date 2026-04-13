@@ -25,7 +25,7 @@ async function getMenuData() {
       where: { date: { gte: new Date(curYear, curMonth - 1, 1), lte: new Date(curYear, curMonth, 0, 23, 59, 59) }, isActive: true },
       include: {
         menuAssignments: {
-          include: { product: { select: { id: true, name: true, description: true, originalPrice: true, price: true, kcal: true, tags: true, imageUrl: true, category: { select: { id: true, name: true, slug: true, icon: true, color: true, sortOrder: true, isActive: true, isOption: true } } } } },
+          include: { product: { select: { id: true, name: true, description: true, originalPrice: true, singlePrice: true, price: true, kcal: true, tags: true, imageUrl: true, category: { select: { id: true, name: true, slug: true, icon: true, color: true, sortOrder: true, isActive: true, isOption: true } } } } },
           orderBy: { sortOrder: "asc" },
         },
       },
@@ -35,7 +35,7 @@ async function getMenuData() {
       where: { date: { gte: new Date(nextYear, nextMonth - 1, 1), lte: new Date(nextYear, nextMonth, 0, 23, 59, 59) }, isActive: true },
       include: {
         menuAssignments: {
-          include: { product: { select: { id: true, name: true, description: true, originalPrice: true, price: true, kcal: true, tags: true, imageUrl: true, category: { select: { id: true, name: true, slug: true, icon: true, color: true, sortOrder: true, isActive: true, isOption: true } } } } },
+          include: { product: { select: { id: true, name: true, description: true, originalPrice: true, singlePrice: true, price: true, kcal: true, tags: true, imageUrl: true, category: { select: { id: true, name: true, slug: true, icon: true, color: true, sortOrder: true, isActive: true, isOption: true } } } } },
           orderBy: { sortOrder: "asc" },
         },
       },

@@ -52,13 +52,15 @@ export async function POST(request: Request) {
         );
       }
       const qty = Math.max(1, it.quantity ?? 1);
-      const line = p.price * qty;
+      // 단건 주문은 singlePrice 우선, 없으면 구독가(price) 사용
+      const unitPrice = p.singlePrice ?? p.price;
+      const line = unitPrice * qty;
       itemsTotal += line;
       if (!p.category?.isOption) baseTotal += line;
       orderItemData.push({
         productId: p.id,
         quantity: qty,
-        unitPrice: p.price,
+        unitPrice,
         totalPrice: line,
       });
     }

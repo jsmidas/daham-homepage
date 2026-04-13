@@ -13,6 +13,7 @@ type Product = {
   categoryId: string;
   category?: { name: string; slug: string };
   originalPrice: number | null;
+  singlePrice: number | null;
   price: number;
   kcal: number | null;
   description: string;

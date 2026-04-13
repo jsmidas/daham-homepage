@@ -7,6 +7,7 @@ type Product = {
   name: string;
   categoryId: string;
   originalPrice: number | null;
+  singlePrice: number | null;
   price: number;
   kcal: number | null;
   description: string;
@@ -45,6 +46,7 @@ export default function ProductModal({
     name: product?.name ?? "",
     categoryId: product?.categoryId ?? "",
     originalPrice: product?.originalPrice ?? 0,
+    singlePrice: product?.singlePrice ?? 0,
     price: product?.price ?? 0,
     kcal: product?.kcal ?? 0,
     description: product?.description ?? "",
@@ -73,6 +75,9 @@ export default function ProductModal({
   const discountRate = form.originalPrice > 0 && form.price > 0
     ? Math.round((1 - form.price / form.originalPrice) * 100)
     : 0;
+  const singleDiscountRate = form.originalPrice > 0 && form.singlePrice > 0
+    ? Math.round((1 - form.singlePrice / form.originalPrice) * 100)
+    : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +92,7 @@ export default function ProductModal({
       body: JSON.stringify({
         ...form,
         originalPrice: form.originalPrice || null,
+        singlePrice: form.singlePrice || null,
         kcal: form.kcal || null,
         tags: form.tags || null,
         imageUrl: form.imageUrl || null,
@@ -129,20 +135,32 @@ export default function ProductModal({
             </select>
           </div>
 
-          {/* 정가 + 판매가 */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* 정가 + 단건가 + 구독가 3-티어 */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">정가 (원)</label>
               <input type="number" value={form.originalPrice} onChange={(e) => setForm({ ...form, originalPrice: Number(e.target.value) })} className={inputClass} />
+              <p className="text-[10px] text-gray-400 mt-1">소비자가</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                판매가 (원) *
+                단건가 (원)
+                {singleDiscountRate > 0 && (
+                  <span className="ml-1 text-[10px] text-orange-500 font-bold">−{singleDiscountRate}%</span>
+                )}
+              </label>
+              <input type="number" value={form.singlePrice} onChange={(e) => setForm({ ...form, singlePrice: Number(e.target.value) })} className={inputClass} placeholder="미입력 시 구독가 사용" />
+              <p className="text-[10px] text-gray-400 mt-1">1회 주문가</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                구독가 (원) *
                 {discountRate > 0 && (
-                  <span className="ml-2 text-red-500 font-bold">{discountRate}% 할인</span>
+                  <span className="ml-1 text-[10px] text-red-500 font-bold">−{discountRate}%</span>
                 )}
               </label>
               <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} required className={inputClass} />
+              <p className="text-[10px] text-gray-400 mt-1">정기구독가</p>
             </div>
           </div>
 

@@ -18,6 +18,7 @@ type Product = {
   name: string;
   description: string | null;
   originalPrice: number | null;
+  singlePrice: number | null;
   price: number;
   imageUrl: string | null;
   tags: string | null;
@@ -364,7 +365,8 @@ function TrialItemRow({ item, deliveryDate }: { item: Product; deliveryDate: str
     addItem({
       productId: item.id,
       name: item.name,
-      price: item.price,
+      // 단건 주문 (맛보기): singlePrice 우선, 없으면 구독가(price)
+      price: item.singlePrice ?? item.price,
       imageUrl: item.imageUrl,
       quantity: 1,
       deliveryDate,

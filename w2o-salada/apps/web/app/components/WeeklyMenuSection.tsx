@@ -20,6 +20,7 @@ type Product = {
   name: string;
   description: string | null;
   originalPrice: number | null;
+  singlePrice: number | null;
   price: number;
   kcal: number | null;
   tags: string | null;
@@ -384,7 +385,8 @@ function MenuItemRow({ item, deliveryDate }: { item: Product; deliveryDate: stri
     addItem({
       productId: item.id,
       name: item.name,
-      price: item.price,
+      // 단건 주문: singlePrice 우선, 없으면 구독가(price) 사용
+      price: item.singlePrice ?? item.price,
       imageUrl: item.imageUrl,
       quantity: 1,
       deliveryDate,
