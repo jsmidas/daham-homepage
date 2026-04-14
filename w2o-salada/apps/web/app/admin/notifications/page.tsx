@@ -62,6 +62,9 @@ export default function NotificationsPage() {
   const [testVars, setTestVars] = useState<Record<string, string>>({
     고객명: "홍길동",
     주문번호: "W2O-TEST-0001",
+    배송일: "4월 15일",
+    금액: "11,000",
+    월: "4",
   });
   const [sending, setSending] = useState(false);
 

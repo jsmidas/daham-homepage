@@ -31,7 +31,7 @@ export type TemplateCode = (typeof TEMPLATE)[keyof typeof TEMPLATE];
 // 템플릿별 미리보기 문구 (솔라피 템플릿 승인 후 templateId로 대체됨)
 export const TEMPLATE_PREVIEW: Record<TemplateCode, string> = {
   ORDER_PAID:
-    "[W2O SALADA]\n#{고객명}님, 주문이 완료되었습니다.\n주문번호: #{주문번호}\n내일 새벽 도착 예정입니다.",
+    "[W2O SALADA]\n#{고객명}님, 주문이 완료되었습니다.\n주문번호: #{주문번호}\n#{배송일} 새벽 도착 예정입니다.",
   DELIVERY_START:
     "[W2O SALADA]\n#{고객명}님, 새벽배송이 출발했습니다.\n안전하게 배송해드리겠습니다.",
   DELIVERY_DONE:

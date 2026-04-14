@@ -91,6 +91,13 @@ export async function POST(request: Request) {
         data: { status: "PAID", paymentKey, paidAt: new Date() },
         include: { user: true },
       });
+
+      // 배송일 KST 포맷 ("M월 D일") — null이면 "다음" 으로 fallback
+      const formatDeliveryDate = (d: Date | null): string => {
+        if (!d) return "다음";
+        const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+        return `${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일`;
+      };
       await prisma.payment.create({
         data: {
           orderId: order.id,
@@ -112,6 +119,7 @@ export async function POST(request: Request) {
           variables: {
             고객명: order.user.name,
             주문번호: order.orderNo,
+            배송일: formatDeliveryDate(order.deliveryDate),
           },
         });
       }
