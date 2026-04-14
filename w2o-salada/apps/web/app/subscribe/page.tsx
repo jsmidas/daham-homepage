@@ -316,16 +316,37 @@ function SubscribeContent() {
   };
 
   // AUTO 모드: 그날 메뉴풀에서 카테고리별로 slot 개수만큼 선택
-  // - 각 카테고리 slug 로 필터 → stock·sortOrder 순(=API의 sortOrder 순)으로 앞에서부터 count개
-  // - 풀이 부족하면 있는 만큼만 (shortages)
+  // - 1차: 각 카테고리 slug 로 필터 → sortOrder 순으로 앞에서부터 count개
+  // - 2차(fallback): 해당 카테고리가 부족하면 남은 슬롯을 다른 본품(isOption=false)으로 채움
+  //   → 사용자가 "샐러드 1 + 간편식 1" 설정했는데 그 날 간편식이 없으면 샐러드 추가로 보정
+  //   → 총 수량과 본품 합계를 안정적으로 확보
   const getAutoSelectedProductIds = (dateStr: string): string[] => {
     const menus = getMenuForDate(dateStr);
     const result: string[] = [];
+    const used = new Set<string>();
+
+    // 1차: 카테고리 슬롯 그대로
     for (const [slug, count] of Object.entries(categorySlots)) {
       if (count <= 0) continue;
       const catItems = menus.filter((m) => m.product.category?.slug === slug).slice(0, count);
-      result.push(...catItems.map((m) => m.productId));
+      for (const m of catItems) {
+        result.push(m.productId);
+        used.add(m.productId);
+      }
     }
+
+    // 2차: 총 수량이 모자라면 본품 풀에서 추가 (옵션 카테고리 제외)
+    const remaining = itemsPerDelivery - result.length;
+    if (remaining > 0) {
+      const filler = menus.filter(
+        (m) => !used.has(m.productId) && !m.product.category?.isOption,
+      );
+      for (const m of filler.slice(0, remaining)) {
+        result.push(m.productId);
+        used.add(m.productId);
+      }
+    }
+
     return result;
   };
 
@@ -738,7 +759,12 @@ function SubscribeContent() {
                 <div className="space-y-2 mb-4">
                   <p className="text-xs text-[#7aaa90] mb-2">날짜를 탭하면 건너뛸 수 있습니다</p>
                   {activeDates.map((d) => {
-                    const menus = getMenuForDate(d.dateStr).slice(0, itemsPerDelivery);
+                    // 카테고리 슬롯 기준 자동 배정 결과를 그대로 표시 (calculatePrice·결제 payload 와 동일 로직)
+                    const pickedIds = getAutoSelectedProductIds(d.dateStr);
+                    const allMenus = getMenuForDate(d.dateStr);
+                    const menus = pickedIds
+                      .map((pid) => allMenus.find((m) => m.productId === pid))
+                      .filter((m): m is NonNullable<typeof m> => !!m);
                     const dateObj = new Date(d.dateStr + "T00:00:00");
                     return (
                       <div key={d.dateStr} className="flex items-center gap-3 bg-white rounded-xl border border-[#EF9F27]/10 px-4 py-3">
@@ -748,7 +774,14 @@ function SubscribeContent() {
                         </div>
                         <div className="flex-1 min-w-0">
                           {menus.length > 0 ? menus.map((m) => (
-                            <p key={m.productId} className="text-sm text-[#0A1A0F] truncate">{m.product.name}</p>
+                            <p key={m.productId} className="text-sm text-[#0A1A0F] truncate flex items-center gap-1">
+                              <span
+                                className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                                style={{ backgroundColor: m.product.category?.isOption ? "#EF9F27" : "#1D9E75" }}
+                                aria-hidden
+                              />
+                              {m.product.name}
+                            </p>
                           )) : (
                             <p className="text-xs text-gray-400">메뉴 미배정</p>
                           )}
