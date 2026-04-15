@@ -11,7 +11,7 @@ import ReviewsSection from "./components/ReviewsSection";
 import CTASection from "./components/CTASection";
 import Footer from "./components/Footer";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 async function getMenuData() {
   const now = new Date();

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@repo/db";
 import { requireAdmin } from "../../../lib/auth-guard";
 
@@ -36,6 +37,9 @@ export async function POST(request: Request) {
         create: { key, value: String(value) },
       });
     }
+
+    // 메인 페이지 footer가 Setting 값을 읽으므로 저장 즉시 재검증
+    revalidatePath("/");
 
     return NextResponse.json({ message: "저장 완료", count: entries.length });
   } catch (err) {

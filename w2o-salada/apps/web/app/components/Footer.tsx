@@ -87,14 +87,23 @@ export default async function Footer() {
       </div>
 
       {/* 사업자 정보 */}
-      <div className="border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-6 space-y-1 text-xs text-gray-600">
+      <div className="border-t border-white/5 bg-black/30">
+        <div className="max-w-7xl mx-auto px-6 py-6 space-y-1.5 text-xs text-gray-100 leading-relaxed">
           <p>
-            상호: {info.shopName} | 대표: 다함푸드
-            {info.businessNumber && <> | 사업자등록번호: {info.businessNumber}</>}
+            <span className="text-gray-400">상호:</span> {info.shopName}
+            <span className="text-gray-400 ml-3">대표:</span> 다함푸드
+            {info.businessNumber && (
+              <>
+                <span className="text-gray-400 ml-3">사업자등록번호:</span> {info.businessNumber}
+              </>
+            )}
           </p>
-          {info.address && <p>주소: {info.address}</p>}
-          <p className="pt-2">&copy; 2026 W2O SALADA. All rights reserved.</p>
+          {info.address && (
+            <p>
+              <span className="text-gray-400">주소:</span> {info.address}
+            </p>
+          )}
+          <p className="pt-2 text-gray-400">&copy; 2026 W2O SALADA. All rights reserved.</p>
         </div>
       </div>
     </footer>
