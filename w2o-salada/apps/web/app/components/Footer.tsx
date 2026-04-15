@@ -1,6 +1,31 @@
 import Link from "next/link";
+import { prisma } from "@repo/db";
 
-export default function Footer() {
+// 어드민 설정(Setting 테이블)에서 사업자 정보를 읽어와 렌더링.
+// 부모 페이지의 revalidate 캐시에 자연스럽게 흡수됨.
+async function getBusinessInfo() {
+  const keys = ["shopName", "phone", "email", "address", "businessNumber"];
+  try {
+    const rows = await prisma.setting.findMany({
+      where: { key: { in: keys } },
+    });
+    const map: Record<string, string> = {};
+    for (const r of rows) map[r.key] = r.value;
+    return {
+      shopName: map.shopName ?? "W2O SALADA",
+      phone: map.phone ?? "",
+      email: map.email ?? "",
+      address: map.address ?? "",
+      businessNumber: map.businessNumber ?? "",
+    };
+  } catch {
+    return { shopName: "W2O SALADA", phone: "", email: "", address: "", businessNumber: "" };
+  }
+}
+
+export default async function Footer() {
+  const info = await getBusinessInfo();
+
   return (
     <footer className="bg-[#060D09] border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -53,18 +78,24 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4">문의</h4>
             <div className="space-y-2 text-sm text-gray-500">
-              <p>전화: 053-721-7794</p>
-              <p>이메일: hello@w2osalada.co.kr</p>
+              {info.phone && <p>전화: {info.phone}</p>}
+              {info.email && <p>이메일: {info.email}</p>}
               <p>운영시간: 평일 09:00 - 18:00</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-white/5 py-6">
-        <p className="text-center text-gray-600 text-sm">
-          &copy; 2026 W2O SALADA. All rights reserved. | 다함푸드
-        </p>
+      {/* 사업자 정보 */}
+      <div className="border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-6 space-y-1 text-xs text-gray-600">
+          <p>
+            상호: {info.shopName} | 대표: 다함푸드
+            {info.businessNumber && <> | 사업자등록번호: {info.businessNumber}</>}
+          </p>
+          {info.address && <p>주소: {info.address}</p>}
+          <p className="pt-2">&copy; 2026 W2O SALADA. All rights reserved.</p>
+        </div>
       </div>
     </footer>
   );
