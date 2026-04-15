@@ -4,7 +4,7 @@ import { prisma } from "@repo/db";
 // 어드민 설정(Setting 테이블)에서 사업자 정보를 읽어와 렌더링.
 // 부모 페이지의 revalidate 캐시에 자연스럽게 흡수됨.
 async function getBusinessInfo() {
-  const keys = ["shopName", "phone", "email", "address", "businessNumber"];
+  const keys = ["shopName", "companyName", "ownerName", "phone", "email", "address", "businessNumber"];
   try {
     const rows = await prisma.setting.findMany({
       where: { key: { in: keys } },
@@ -13,13 +13,15 @@ async function getBusinessInfo() {
     for (const r of rows) map[r.key] = r.value;
     return {
       shopName: map.shopName ?? "W2O SALADA",
+      companyName: map.companyName ?? "",
+      ownerName: map.ownerName ?? "",
       phone: map.phone ?? "",
       email: map.email ?? "",
       address: map.address ?? "",
       businessNumber: map.businessNumber ?? "",
     };
   } catch {
-    return { shopName: "W2O SALADA", phone: "", email: "", address: "", businessNumber: "" };
+    return { shopName: "W2O SALADA", companyName: "", ownerName: "", phone: "", email: "", address: "", businessNumber: "" };
   }
 }
 
@@ -91,7 +93,16 @@ export default async function Footer() {
         <div className="max-w-7xl mx-auto px-6 py-6 space-y-1.5 text-xs text-gray-100 leading-relaxed">
           <p>
             <span className="text-gray-400">상호:</span> {info.shopName}
-            <span className="text-gray-400 ml-3">대표:</span> 다함푸드
+            {info.companyName && (
+              <>
+                <span className="text-gray-400 ml-3">회사명:</span> {info.companyName}
+              </>
+            )}
+            {info.ownerName && (
+              <>
+                <span className="text-gray-400 ml-3">대표:</span> {info.ownerName}
+              </>
+            )}
             {info.businessNumber && (
               <>
                 <span className="text-gray-400 ml-3">사업자등록번호:</span> {info.businessNumber}

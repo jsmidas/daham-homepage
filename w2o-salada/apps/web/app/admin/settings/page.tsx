@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 
 const defaultSettings = {
   shopName: "W2O SALADA",
+  companyName: "",
+  ownerName: "",
   phone: "053-721-7794",
   email: "hello@w2osalada.co.kr",
   address: "대구광역시 달서구",
@@ -83,8 +85,16 @@ export default function SettingsPage() {
           <h3 className="font-bold text-gray-700 mb-4">쇼핑몰 기본 설정</h3>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-600 block mb-1">쇼핑몰 이름</label>
+              <label className="text-sm font-medium text-gray-600 block mb-1">쇼핑몰 이름 (브랜드)</label>
               <input type="text" value={settings.shopName} onChange={(e) => update("shopName", e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600 block mb-1">회사명 (법인명)</label>
+              <input type="text" value={settings.companyName} onChange={(e) => update("companyName", e.target.value)} placeholder="예: 주식회사 다함푸드" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600 block mb-1">대표자명</label>
+              <input type="text" value={settings.ownerName} onChange={(e) => update("ownerName", e.target.value)} placeholder="예: 홍길동" className={inputClass} />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600 block mb-1">대표 전화번호</label>
@@ -105,7 +115,7 @@ export default function SettingsPage() {
           </div>
           <div className="mt-5 flex items-center gap-3">
             <button
-              onClick={() => handleSave("basic", ["shopName", "phone", "email", "address", "businessNumber"])}
+              onClick={() => handleSave("basic", ["shopName", "companyName", "ownerName", "phone", "email", "address", "businessNumber"])}
               className="px-5 py-2 bg-[#1D9E75] text-white text-sm font-medium rounded-lg hover:bg-[#178a64] transition"
             >
               저장
