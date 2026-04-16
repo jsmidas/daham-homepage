@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -141,6 +141,141 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
     <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-xl bg-[#1D9E75] text-white shadow-lg animate-[slideUp_0.3s_ease]">
       <span className="material-symbols-outlined text-lg">check_circle</span>
       <span className="text-sm font-medium">{message}</span>
+    </div>
+  );
+}
+
+/* ── Image list editor (drag & drop) ──────────────────── */
+
+function ImageListEditor({
+  label,
+  images,
+  onChange,
+}: {
+  label: string;
+  images: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of list) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "pages");
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) uploaded.push(data.url);
+        }
+      }
+      if (uploaded.length) onChange([...images, ...uploaded]);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+      if (!dragOver) setDragOver(true);
+    }
+  };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (e.dataTransfer.files.length) void uploadFiles(e.dataTransfer.files);
+  };
+
+  return (
+    <div>
+      <label className="block text-sm text-gray-400 mb-2">{label}</label>
+
+      {images.filter(Boolean).length > 0 && (
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {images.map((url, idx) => {
+            if (!url) return null;
+            return (
+              <div
+                key={idx}
+                className="relative rounded-lg overflow-hidden border border-white/10 aspect-video bg-[#0f1420] group"
+              >
+                <img
+                  src={url}
+                  alt={`${label} ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange(images.filter((_, i) => i !== idx))}
+                  className="absolute top-1 right-1 w-6 h-6 bg-black/70 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="삭제"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`w-full py-6 px-4 rounded-xl border border-dashed text-sm transition-colors flex flex-col items-center justify-center gap-1 ${
+          uploading
+            ? "opacity-60 cursor-wait border-white/10 text-gray-500"
+            : dragOver
+            ? "border-[#1D9E75] bg-[#1D9E75]/10 text-[#1D9E75] cursor-copy"
+            : "border-white/10 text-gray-500 hover:border-[#1D9E75] hover:text-[#1D9E75] cursor-pointer"
+        }`}
+      >
+        <span className="material-symbols-outlined text-2xl">
+          {uploading ? "progress_activity" : "cloud_upload"}
+        </span>
+        <span>
+          {uploading
+            ? "업로드 중..."
+            : dragOver
+            ? "여기에 놓으세요"
+            : "이미지를 드래그하거나 클릭하여 업로드"}
+        </span>
+        <span className="text-xs text-gray-500">JPG · PNG · WebP · 여러 장 동시 업로드 가능</span>
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        aria-label={`${label} 파일 선택`}
+        title={`${label} 파일 선택`}
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.length) void uploadFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
@@ -367,25 +502,12 @@ export default function PageEditorPage() {
   }
 
   /* ── Image arrays ── */
-  function addImageUrl(field: "gallery_images" | "detail_images" | "hero_images" | "feature_images") {
-    setForm((prev) => ({ ...prev, [field]: [...(prev[field] as string[]), ""] }));
-  }
-  function removeImageUrl(field: "gallery_images" | "detail_images" | "hero_images" | "feature_images", idx: number) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: (prev[field] as string[]).filter((_: string, i: number) => i !== idx),
-    }));
-  }
-  function updateImageUrl(
+  const setImages = (
     field: "gallery_images" | "detail_images" | "hero_images" | "feature_images",
-    idx: number,
-    value: string
-  ) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: (prev[field] as string[]).map((v: string, i: number) => (i === idx ? value : v)),
-    }));
-  }
+    next: string[]
+  ) => {
+    setForm((prev) => ({ ...prev, [field]: next }));
+  };
 
   /* ── Shared UI ── */
   const inputClass =
@@ -465,73 +587,15 @@ export default function PageEditorPage() {
     );
   }
 
-  /* ── Image list editor ── */
-  function ImageListEditor({
-    field,
-    label,
-  }: {
-    field: "hero_images" | "feature_images" | "detail_images" | "gallery_images";
-    label: string;
-  }) {
-    const images = form[field] as string[];
-    return (
-      <div>
-        <label className="block text-sm text-gray-400 mb-2">{label}</label>
-        {images.map((url, idx) => (
-          <div key={idx} className="flex items-center gap-3 mb-2">
-            <span className="material-symbols-outlined text-base text-gray-500 shrink-0">image</span>
-            <input
-              type="url"
-              value={url}
-              onChange={(e) => updateImageUrl(field, idx, e.target.value)}
-              placeholder="이미지 URL"
-              className={inputSmClass + " flex-1"}
-              style={{ width: "auto" }}
-            />
-            <button
-              type="button"
-              onClick={() => removeImageUrl(field, idx)}
-              className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-              aria-label="삭제"
-            >
-              <span className="material-symbols-outlined text-base">delete</span>
-            </button>
-          </div>
-        ))}
-        {/* Preview thumbnails */}
-        {images.filter(Boolean).length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {images.filter(Boolean).map((url, idx) => (
-              <div key={idx} className="rounded-lg overflow-hidden border border-white/10 aspect-video bg-[#0f1420]">
-                <img
-                  src={url}
-                  alt={`${label} ${idx + 1}`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => addImageUrl(field)}
-          className="w-full py-2 rounded-xl border border-dashed border-white/10 text-gray-500 text-sm hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors flex items-center justify-center gap-2"
-        >
-          <span className="material-symbols-outlined text-base">add</span>
-          이미지 URL 추가
-        </button>
-      </div>
-    );
-  }
-
   /* ── Section content renderers ── */
   function renderHero() {
     return (
       <div className="px-6 pb-6 space-y-4">
-        <ImageListEditor field="hero_images" label="히어로 이미지" />
+        <ImageListEditor
+          label="히어로 이미지"
+          images={form.hero_images}
+          onChange={(next) => setImages("hero_images", next)}
+        />
         <div>
           <label className="block text-sm text-gray-400 mb-1">서브타이틀</label>
           <input
@@ -569,7 +633,11 @@ export default function PageEditorPage() {
             className={inputClass + " resize-y min-h-[120px]"}
           />
         </div>
-        <ImageListEditor field="feature_images" label="특장점 이미지" />
+        <ImageListEditor
+          label="특장점 이미지"
+          images={form.feature_images}
+          onChange={(next) => setImages("feature_images", next)}
+        />
       </div>
     );
   }
@@ -706,7 +774,11 @@ export default function PageEditorPage() {
             className={inputClass + " resize-y min-h-[200px]"}
           />
         </div>
-        <ImageListEditor field="detail_images" label="상세 이미지" />
+        <ImageListEditor
+          label="상세 이미지"
+          images={form.detail_images}
+          onChange={(next) => setImages("detail_images", next)}
+        />
       </div>
     );
   }
@@ -761,7 +833,11 @@ export default function PageEditorPage() {
   function renderGallery() {
     return (
       <div className="px-6 pb-6 space-y-4">
-        <ImageListEditor field="gallery_images" label="갤러리 이미지" />
+        <ImageListEditor
+          label="갤러리 이미지"
+          images={form.gallery_images}
+          onChange={(next) => setImages("gallery_images", next)}
+        />
       </div>
     );
   }
