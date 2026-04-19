@@ -55,26 +55,25 @@ const DEFAULT_SECTION_ORDER = [
   "specs",
   "detail",
   "nutrition",
-  "gallery",
 ];
 
 const SECTION_LABELS: Record<string, string> = {
   hero: "히어로",
-  feature: "특장점",
-  keypoints: "키포인트",
-  specs: "제품 스펙",
-  detail: "상세 설명",
-  nutrition: "영양 정보",
+  feature: "제품 소개",
+  keypoints: "특장점",
+  specs: "배송 시스템",
+  detail: "구독 안내",
+  nutrition: "기타 안내",
   gallery: "갤러리",
 };
 
 const SECTION_ICONS: Record<string, string> = {
   hero: "panorama",
-  feature: "star",
-  keypoints: "lightbulb",
-  specs: "list_alt",
-  detail: "description",
-  nutrition: "restaurant",
+  feature: "description",
+  keypoints: "star",
+  specs: "local_shipping",
+  detail: "autorenew",
+  nutrition: "info",
   gallery: "photo_library",
 };
 
