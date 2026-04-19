@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@repo/db";
 
+// 상품 목록은 이미지·가격 변경이 잦으므로 항상 fresh 반환
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
