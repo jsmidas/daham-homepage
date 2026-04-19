@@ -532,16 +532,51 @@ export default function PageEditorPage() {
   }
 
   /* ── Image arrays ── */
-  const setImages = (
-    field:
-      | "gallery_images"
-      | "detail_images"
-      | "hero_images"
-      | "feature_images"
-      | "nutrition_images",
-    next: string[]
-  ) => {
+  type ImageField =
+    | "gallery_images"
+    | "detail_images"
+    | "hero_images"
+    | "feature_images"
+    | "nutrition_images";
+
+  const setImages = (field: ImageField, next: string[]) => {
     setForm((prev) => ({ ...prev, [field]: next }));
+  };
+
+  // 섹션 ID → 이미지 필드명 매핑
+  const SECTION_FIELD: Record<string, ImageField> = {
+    hero: "hero_images",
+    feature: "feature_images",
+    detail: "detail_images",
+    nutrition: "nutrition_images",
+    gallery: "gallery_images",
+  };
+
+  // 섹션 전체 드롭 처리 — 안쪽 드롭존에 정확히 안 맞아도 OK
+  const handleSectionDrop = async (sectionId: string, files: FileList) => {
+    const field = SECTION_FIELD[sectionId];
+    if (!field) return;
+    const images = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (images.length === 0) return;
+    const uploaded: string[] = [];
+    for (const file of images) {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "pages");
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) uploaded.push(data.url);
+      }
+    }
+    if (uploaded.length) {
+      setForm((prev) => ({
+        ...prev,
+        [field]: [...(prev[field] as string[]), ...uploaded],
+      }));
+      // 해당 섹션 펼쳐서 업로드된 이미지 바로 보이게
+      setActiveSection(sectionId);
+    }
   };
 
   /* ── Shared UI ── */
@@ -984,14 +1019,23 @@ export default function PageEditorPage() {
             const renderer = sectionRenderers[sectionId];
             if (!renderer) return null;
             const acceptsImage = IMAGE_SECTIONS.has(sectionId);
-            // 드래그 중에는 이미지 허용 섹션만 초록색으로 부드럽게 강조.
-            // 나머지는 변화 없음 — 시각적 소음 최소화.
             const wrapperClass =
               fileDragging && acceptsImage
-                ? "rounded-2xl border-2 border-[#1D9E75] bg-[#1a1f2e] mb-4 overflow-hidden shadow-lg shadow-[#1D9E75]/20 transition-all"
-                : "rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden transition-all";
+                ? "rounded-2xl border-2 border-[#1D9E75] bg-[#1a1f2e] mb-4 overflow-hidden shadow-lg shadow-[#1D9E75]/20"
+                : "rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden";
             return (
-              <div key={sectionId} className={wrapperClass}>
+              <div
+                key={sectionId}
+                className={wrapperClass}
+                onDragOver={acceptsImage ? (e) => { e.preventDefault(); } : undefined}
+                onDrop={acceptsImage ? (e) => {
+                  if (e.dataTransfer.files.length) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleSectionDrop(sectionId, e.dataTransfer.files);
+                  }
+                } : undefined}
+              >
                 <SectionHeader
                   sectionId={sectionId}
                   title={`${num}. ${SECTION_LABELS[sectionId] || sectionId}`}
