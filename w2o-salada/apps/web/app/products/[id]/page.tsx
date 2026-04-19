@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "../../store/cart";
+import ProductPageView, {
+  parseProductPage,
+  type ProductPageData,
+} from "../../components/ProductPageView";
 
 type Product = {
   id: string;
@@ -23,16 +27,22 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const { addItem } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
+  const [productPage, setProductPage] = useState<ProductPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/products/${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setProduct(data);
-        setLoading(false);
-      });
+    // 병렬로 기본 상품 정보 + 상세페이지 데이터 둘 다 fetch
+    Promise.all([
+      fetch(`/api/products/${id}`).then((r) => r.json()),
+      fetch(`/api/product-pages/${id}`).then((r) => (r.ok ? r.json() : null)),
+    ]).then(([productData, pageData]) => {
+      setProduct(productData);
+      if (pageData && pageData.isPublished) {
+        setProductPage(parseProductPage(pageData));
+      }
+      setLoading(false);
+    });
   }, [id]);
 
   if (loading) {
@@ -217,6 +227,17 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* 상세페이지 (관리자가 공개 설정한 경우에만) */}
+        {productPage && (
+          <section className="mt-12 bg-white rounded-2xl overflow-hidden shadow-sm border border-[#1D9E75]/10">
+            <ProductPageView
+              data={productPage}
+              productName={product.name}
+              showHeroTitle={false}
+            />
+          </section>
+        )}
       </div>
     </div>
   );

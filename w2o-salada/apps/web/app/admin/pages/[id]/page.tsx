@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import ProductPageView from "../../../components/ProductPageView";
 
 /* ── Types ────────────────────────────────────────────── */
 
@@ -871,6 +872,21 @@ export default function PageEditorPage() {
 
   /* ── Preview panel ── */
   function PreviewPanel() {
+    // 공개 페이지와 동일한 렌더러 사용 → preview와 실제 결과 1:1 매칭 보장
+    const viewData = {
+      heroImages: form.hero_images,
+      subtitle: form.subtitle,
+      featureTitle: form.feature_title,
+      featureDescription: form.feature_description,
+      featureImages: form.feature_images,
+      keyPoints: form.key_points,
+      specs: form.specs,
+      detailDescription: form.detail_description,
+      detailImages: form.detail_images,
+      nutrition: form.nutrition,
+      galleryImages: form.gallery_images,
+      sectionOrder: form.section_order,
+    };
     return (
       <div className="w-1/2 min-w-0 sticky top-0 max-h-screen overflow-y-auto">
         <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
@@ -881,146 +897,7 @@ export default function PageEditorPage() {
           </div>
 
           <div className="max-w-md mx-auto">
-            {form.section_order.map((sectionId) => {
-              switch (sectionId) {
-                case "hero":
-                  return (
-                    <div key="hero">
-                      {form.hero_images.filter(Boolean).length > 0 ? (
-                        <div className="aspect-video bg-gray-100 relative overflow-hidden">
-                          <img
-                            src={form.hero_images.filter(Boolean)[0]}
-                            alt="Hero"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = "none";
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-gray-100 flex items-center justify-center text-gray-300">
-                          <span className="material-symbols-outlined text-5xl">panorama</span>
-                        </div>
-                      )}
-                      {(product?.name || form.subtitle) && (
-                        <div className="px-5 py-4">
-                          <h2 className="text-xl font-bold text-gray-900">{product?.name}</h2>
-                          {form.subtitle && (
-                            <p className="text-sm text-gray-500 mt-1">{form.subtitle}</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-
-                case "feature":
-                  if (!form.feature_title && !form.feature_description) return null;
-                  return (
-                    <div key="feature" className="px-5 py-4 border-t border-gray-100">
-                      {form.feature_title && (
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">{form.feature_title}</h3>
-                      )}
-                      {form.feature_description && (
-                        <p className="text-sm text-gray-600 whitespace-pre-wrap">{form.feature_description}</p>
-                      )}
-                      {form.feature_images.filter(Boolean).length > 0 && (
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                          {form.feature_images.filter(Boolean).map((url, i) => (
-                            <img key={i} src={url} alt="" className="rounded-lg w-full aspect-square object-cover" />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-
-                case "keypoints": {
-                  const filledKps = form.key_points.filter((kp) => kp.title);
-                  if (filledKps.length === 0) return null;
-                  return (
-                    <div key="keypoints" className="px-5 py-4 border-t border-gray-100">
-                      <div className="grid grid-cols-2 gap-3">
-                        {filledKps.map((kp, i) => (
-                          <div key={i} className="bg-[#f0faf5] rounded-xl p-3 text-center">
-                            <span className="material-symbols-outlined text-2xl text-[#1D9E75]">{kp.icon}</span>
-                            <div className="text-sm font-semibold text-gray-900 mt-1">{kp.title}</div>
-                            {kp.description && (
-                              <div className="text-xs text-gray-500 mt-0.5">{kp.description}</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                case "specs": {
-                  const filledSpecs = form.specs.filter((s) => s.label);
-                  if (filledSpecs.length === 0) return null;
-                  return (
-                    <div key="specs" className="px-5 py-4 border-t border-gray-100">
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">제품 스펙</h4>
-                      <div className="space-y-1.5">
-                        {filledSpecs.map((s, i) => (
-                          <div key={i} className="flex justify-between text-sm">
-                            <span className="text-gray-500">{s.label}</span>
-                            <span className="text-gray-900 font-medium">{s.value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                case "detail":
-                  if (!form.detail_description && form.detail_images.filter(Boolean).length === 0) return null;
-                  return (
-                    <div key="detail" className="px-5 py-4 border-t border-gray-100">
-                      {form.detail_description && (
-                        <p className="text-sm text-gray-600 whitespace-pre-wrap">{form.detail_description}</p>
-                      )}
-                      {form.detail_images.filter(Boolean).map((url, i) => (
-                        <img key={i} src={url} alt="" className="rounded-lg w-full mt-3" />
-                      ))}
-                    </div>
-                  );
-
-                case "nutrition": {
-                  const filledNutrition = form.nutrition.filter((n) => n.label && n.value);
-                  if (filledNutrition.length === 0) return null;
-                  return (
-                    <div key="nutrition" className="px-5 py-4 border-t border-gray-100">
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">영양 정보</h4>
-                      <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
-                        {filledNutrition.map((n, i) => (
-                          <div key={i} className="flex justify-between text-sm">
-                            <span className="text-gray-500">{n.label}</span>
-                            <span className="text-gray-900 font-medium">{n.value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                case "gallery": {
-                  const filledGallery = form.gallery_images.filter(Boolean);
-                  if (filledGallery.length === 0) return null;
-                  return (
-                    <div key="gallery" className="px-5 py-4 border-t border-gray-100">
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">갤러리</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {filledGallery.map((url, i) => (
-                          <img key={i} src={url} alt="" className="rounded-lg w-full aspect-square object-cover" />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                default:
-                  return null;
-              }
-            })}
+            <ProductPageView data={viewData} productName={product?.name ?? ""} />
           </div>
         </div>
       </div>
