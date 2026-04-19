@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@repo/db";
 import { requireAdmin } from "../../../../lib/auth-guard";
 
@@ -93,6 +94,11 @@ export async function PUT(
           ]
         : []),
     ]);
+
+    // ISR 캐시 무효화 — 홈/메뉴/상품상세 즉시 갱신
+    revalidatePath("/");
+    revalidatePath("/menu");
+    revalidatePath(`/products/${id}`);
 
     return NextResponse.json(page);
   } catch (err) {

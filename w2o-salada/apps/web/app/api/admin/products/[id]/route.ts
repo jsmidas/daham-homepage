@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@repo/db";
 import { requireAdmin } from "../../../../lib/auth-guard";
 
@@ -36,6 +37,12 @@ export async function PATCH(
     }
 
     const product = await prisma.product.update({ where: { id }, data });
+
+    // 이미지/가격/이름 등 변경 즉시 공개 페이지에 반영
+    revalidatePath("/");
+    revalidatePath("/menu");
+    revalidatePath(`/products/${id}`);
+
     return NextResponse.json(product);
   } catch (err) {
     console.error("PATCH /api/admin/products/[id] error:", err);
@@ -54,6 +61,10 @@ export async function DELETE(
   try {
     const { id } = await params;
     await prisma.product.delete({ where: { id } });
+
+    revalidatePath("/");
+    revalidatePath("/menu");
+
     return NextResponse.json({ message: "삭제 완료" });
   } catch (err) {
     console.error("DELETE /api/admin/products/[id] error:", err);
