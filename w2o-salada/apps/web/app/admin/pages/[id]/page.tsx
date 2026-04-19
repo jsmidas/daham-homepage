@@ -57,6 +57,9 @@ const DEFAULT_SECTION_ORDER = [
   "nutrition",
 ];
 
+// 이미지 업로드를 받는 섹션들 (드래그 중 시각 강조용)
+const IMAGE_SECTIONS = new Set(["hero", "feature", "detail", "gallery"]);
+
 const SECTION_LABELS: Record<string, string> = {
   hero: "히어로",
   feature: "제품 소개",
@@ -294,6 +297,40 @@ export default function PageEditorPage() {
   const [activeSection, setActiveSection] = useState<string | null>("hero");
   const [showPreview, setShowPreview] = useState(false);
   const [form, setForm] = useState<PageForm>(makeDefaultForm);
+  // 문서 전체에서 파일이 드래그 중인지 — 이미지 섹션 강조용
+  const [fileDragging, setFileDragging] = useState(false);
+  const dragCounterRef = useRef(0);
+
+  useEffect(() => {
+    const hasFile = (e: DragEvent) =>
+      e.dataTransfer ? Array.from(e.dataTransfer.types).includes("Files") : false;
+
+    const onEnter = (e: DragEvent) => {
+      if (!hasFile(e)) return;
+      dragCounterRef.current += 1;
+      if (dragCounterRef.current === 1) setFileDragging(true);
+    };
+    const onLeave = (e: DragEvent) => {
+      if (!hasFile(e)) return;
+      dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+      if (dragCounterRef.current === 0) setFileDragging(false);
+    };
+    const reset = () => {
+      dragCounterRef.current = 0;
+      setFileDragging(false);
+    };
+
+    document.addEventListener("dragenter", onEnter);
+    document.addEventListener("dragleave", onLeave);
+    document.addEventListener("drop", reset);
+    document.addEventListener("dragend", reset);
+    return () => {
+      document.removeEventListener("dragenter", onEnter);
+      document.removeEventListener("dragleave", onLeave);
+      document.removeEventListener("drop", reset);
+      document.removeEventListener("dragend", reset);
+    };
+  }, []);
 
   // 이전 페이지 불러오기
   const [showCopyModal, setShowCopyModal] = useState(false);
@@ -983,11 +1020,14 @@ export default function PageEditorPage() {
             const num = idx + 1;
             const renderer = sectionRenderers[sectionId];
             if (!renderer) return null;
+            const acceptsImage = IMAGE_SECTIONS.has(sectionId);
+            const wrapperClass = fileDragging
+              ? acceptsImage
+                ? "rounded-2xl border-2 border-[#1D9E75] bg-[#1a1f2e] mb-4 overflow-hidden shadow-lg shadow-[#1D9E75]/20 transition-all"
+                : "rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden opacity-40 transition-all pointer-events-none"
+              : "rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden transition-all";
             return (
-              <div
-                key={sectionId}
-                className="rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden"
-              >
+              <div key={sectionId} className={wrapperClass}>
                 <SectionHeader
                   sectionId={sectionId}
                   title={`${num}. ${SECTION_LABELS[sectionId] || sectionId}`}
