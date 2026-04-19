@@ -304,6 +304,16 @@ export default function PageEditorPage() {
       dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
       if (dragCounterRef.current === 0) setFileDragging(false);
     };
+    // 브라우저 기본 동작(파일을 새 탭에서 열기) 차단.
+    // 유효 드롭 존(ImageListEditor)은 stopPropagation으로 여기까지 안 옴.
+    const onDragOver = (e: DragEvent) => {
+      if (hasFile(e)) e.preventDefault();
+    };
+    const onDrop = (e: DragEvent) => {
+      if (hasFile(e)) e.preventDefault();
+      dragCounterRef.current = 0;
+      setFileDragging(false);
+    };
     const reset = () => {
       dragCounterRef.current = 0;
       setFileDragging(false);
@@ -311,12 +321,14 @@ export default function PageEditorPage() {
 
     document.addEventListener("dragenter", onEnter);
     document.addEventListener("dragleave", onLeave);
-    document.addEventListener("drop", reset);
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("drop", onDrop);
     document.addEventListener("dragend", reset);
     return () => {
       document.removeEventListener("dragenter", onEnter);
       document.removeEventListener("dragleave", onLeave);
-      document.removeEventListener("drop", reset);
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("drop", onDrop);
       document.removeEventListener("dragend", reset);
     };
   }, []);
