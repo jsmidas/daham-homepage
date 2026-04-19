@@ -972,11 +972,12 @@ export default function PageEditorPage() {
             const renderer = sectionRenderers[sectionId];
             if (!renderer) return null;
             const acceptsImage = IMAGE_SECTIONS.has(sectionId);
-            const wrapperClass = fileDragging
-              ? acceptsImage
+            // 드래그 중에는 이미지 허용 섹션만 초록색으로 부드럽게 강조.
+            // 나머지는 변화 없음 — 시각적 소음 최소화.
+            const wrapperClass =
+              fileDragging && acceptsImage
                 ? "rounded-2xl border-2 border-[#1D9E75] bg-[#1a1f2e] mb-4 overflow-hidden shadow-lg shadow-[#1D9E75]/20 transition-all"
-                : "rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden opacity-40 transition-all pointer-events-none"
-              : "rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden transition-all";
+                : "rounded-2xl border border-white/10 bg-[#1a1f2e] mb-4 overflow-hidden transition-all";
             return (
               <div key={sectionId} className={wrapperClass}>
                 <SectionHeader
