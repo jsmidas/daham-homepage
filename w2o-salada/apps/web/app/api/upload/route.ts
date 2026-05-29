@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../lib/auth-guard";
-import { getSupabase } from "../../lib/supabase";
+import { getSupabaseAdmin } from "../../lib/supabase";
 
 export async function POST(request: Request) {
   const { error } = await requireAdmin();
@@ -19,8 +19,8 @@ export async function POST(request: Request) {
     const ext = file.name.split(".").pop();
     const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    // Supabase Storage 업로드
-    const supabase = getSupabase();
+    // Supabase Storage 업로드 (관리자 인증 후 service role로 RLS 우회)
+    const supabase = getSupabaseAdmin();
     const arrayBuffer = await file.arrayBuffer();
     const { data, error: uploadError } = await supabase.storage
       .from("images")
