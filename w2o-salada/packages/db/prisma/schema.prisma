@@ -28,6 +28,7 @@ model User {
   subscriptions Subscription[]
   notifications Notification[]
   reviews       Review[]
+  inquiries     Inquiry[]
 
   @@map("users")
 }
@@ -433,6 +434,32 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@map("reviews")
+}
+
+// ── 1:1 문의 ──
+model Inquiry {
+  id        String        @id @default(cuid())
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id])
+  name      String        // 문의자 이름
+  phone     String        // 연락처
+  category  String        @default("general") // delivery, payment, product, general 등
+  content   String        // 문의 내용
+  images    String?       // JSON array of image URLs
+  status    InquiryStatus @default(PENDING)
+  reply     String?       // 관리자 답변
+  repliedBy String?       // 답변한 관리자 ID
+  repliedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("inquiries")
+}
+
+enum InquiryStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
 }
 
 // ── 쇼핑몰 설정 (key-value) ──
