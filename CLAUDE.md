@@ -320,13 +320,17 @@ POST /api/admin/delivery/route      # 배송 코스표 (추후)
 
 ## 기존 자산 (현재 프로젝트)
 
+> 2026-06-04 디렉터리 평탄화 완료 — 이전엔 저장소 루트 아래 `w2o-salada/`로 한 단계 더 중첩돼
+> 있었으나, 모노레포를 루트로 끌어올려 위 "프로젝트 구조"와 실제 트리가 일치한다.
+> Vercel **Root Directory 설정은 비워야**(저장소 루트) 정상 빌드된다.
+
 ### 유지
 - `salada-video/` — Remotion 히어로 영상 프로젝트 (차량 SVG, 로고 애니메이션)
-- `videos/hero.mp4` — 렌더링된 히어로 영상
+- `apps/web/public/videos/hero.mp4` — 렌더링된 히어로 영상 ([HeroSection.tsx](apps/web/app/components/HeroSection.tsx)에서 `/videos/hero.mp4`로 참조)
 - `CLAUDE.md` — 프로젝트 설계 문서
 
-### Next.js 이전 대상
-- `index.html` → `apps/web/app/(marketing)/page.tsx`
-- `css/style.css` → Tailwind 설정으로 디자인 토큰 이전
-- `js/main.js` → React 컴포넌트로 전환
-- `js/animations.js` → Framer Motion으로 전환
+### Next.js 이전 완료 → `_legacy/`에 아카이브
+옛 정적 랜딩은 Next.js 앱으로 이전을 마쳤고, 원본은 `_legacy/`로 옮겨 보존만 한다(빌드 비포함).
+- `_legacy/index.html` → `apps/web/app/(marketing)/page.tsx`
+- `_legacy/css/style.css` → Tailwind 디자인 토큰
+- `_legacy/js/main.js`, `_legacy/js/animations.js` → React 컴포넌트 + Framer Motion
